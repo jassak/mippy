@@ -4,6 +4,7 @@ Medical Informatics Platform in python
 ## Getting started
 
 1. Install `python3.8` [here](https://www.python.org/downloads/)
+1. `git clone https://github.com/jassak/mippy.git`
 2. `cd mippy`
 3. Create virtual environment
     ```bash
@@ -21,11 +22,12 @@ Medical Informatics Platform in python
     ```bash
    pyro4-ns 
    ```
-7. Run logistic server
-    ```bash
-   python3 src/logistic_server.py 
-   ```
-7. Run logistic client in separate shell (you need to activate venv again)
-    ```bash
-    python3 src/logistic_client.py
-   ```
+7. Run Logistic Regression on 3 local DBs:
+    - Instantiate three local servers
+        ```bash
+       python3 scr/logistic_regression/server.py 
+       ```
+    - Run logistic client in separate shell (you need to activate venv again)
+        ```bash
+        python3 src/logistic_regression/client.py
+       ```
