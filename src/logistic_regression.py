@@ -42,7 +42,7 @@ class LogisticRegressionCentral(CentralNode):
         coeff, ll = self.init_model(n_cols, ntot_obs)
         while True:
             print(f"loss: {-ll}")
-            res = self.nodes.run("get_local_parameters", coeff.tolist())
+            res = self.nodes.get_local_parameters(coeff.tolist())
             grad, hess, ll_new = self.merge_local_results(res)
 
             coeff = self.update_coefficients(grad, hess)

@@ -44,33 +44,3 @@ class DataBase(object):
         values = [v for v in filter.values()][0]
         key = [k for k in filter.keys()][0]
         return or_(*[self.data_table.c[key] == val for val in values])
-
-    def select_md_from_metadata(self, var_names, args):
-        code_name = args.metadata_code_column
-        label_name = args.metadata_label_column
-        iscat_name = args.metadata_isCategorical_column
-        enums_name = args.metadata_enumerations_column
-        min_name = args.metadata_minValue_column
-        max_name = args.metadata_maxValue_column
-        label = dict()
-        is_categorical = dict()
-        enumerations = dict()
-        minmax = dict()
-        sel_stmt = select(
-            [
-                self.metadata_table.c[code_name],
-                self.metadata_table.c[label_name],
-                self.metadata_table.c[iscat_name],
-                self.metadata_table.c[enums_name],
-                self.metadata_table.c[min_name],
-                self.metadata_table.c[max_name],
-            ]
-        ).where(or_(*[self.metadata_table.c[code_name] == vn for vn in var_names]))
-        result = self.engine.execute(sel_stmt)
-        for vn, la, ic, en, mi, ma in result:
-            label[vn] = la
-            is_categorical[vn] = ic
-            if en:
-                enumerations[vn] = re.split(r"\s*,\s*", en)
-            minmax[vn] = (mi, ma)
-        return label, is_categorical, enumerations, minmax

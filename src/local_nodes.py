@@ -1,3 +1,5 @@
+from functools import partial
+
 import logging
 
 import Pyro4
@@ -24,10 +26,12 @@ class LocalNodes:
                     break
         self.nodes = nodes_needed
 
+    def __getattr__(self, method):
+        return partial(self.run, method)
+
     def run(self, method, *args, **kwargs):
         try:
             return [getattr(node, method)(*args, **kwargs) for node in self.nodes]
-
         except Pyro4.errors.CommunicationError as e:
             logging.error(e)
             raise LocalNodesException("Unresponsive node.")
