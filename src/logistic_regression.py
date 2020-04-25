@@ -29,21 +29,20 @@ properties = Dict(
     }
 )
 
-
 n_obs = 1000
 n_cols = len(properties.parameters.columns.features.names) + 1
 ntot_obs = n_obs * n_nodes
 
 
 class LogisticRegressionCentral(CentralNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, datasets):
+        super().__init__(datasets)
 
     def run(self):
         coeff, ll = self.init_model(n_cols, ntot_obs)
         while True:
             print(f"loss: {-ll}")
-            res = [ln.get_local_parameters(coeff.tolist()) for ln in self.local_nodes]
+            res = self.nodes.run("get_local_parameters", coeff.tolist())
             grad, hess, ll_new = self.merge_local_results(res)
 
             coeff = self.update_coefficients(grad, hess)
@@ -106,6 +105,10 @@ class LogisticRegressionLocal(LocalNode):
         ll = np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s))
         return grad.tolist(), hess.tolist(), ll
 
+    @Pyro4.expose
+    def get_datasets(self):
+        return ["adni", "ppmi", "edsd"]
+
 
 if __name__ == "__main__":
     import argparse
@@ -124,6 +127,6 @@ if __name__ == "__main__":
         import time
 
         s = time.perf_counter()
-        LogisticRegressionCentral().run()
+        LogisticRegressionCentral("adni").run()
         elapsed = time.perf_counter() - s
         print(f"\nExecuted in {elapsed:0.2f} seconds.")
