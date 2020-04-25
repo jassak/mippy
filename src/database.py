@@ -7,7 +7,7 @@ from sqlalchemy import between, not_, and_, or_, Table, select, create_engine, M
 class DataBase(object):
     def __init__(self, db_path):
         self.db_path = db_path
-        self.engine = create_engine("sqlite:///{}".format(self.db_path), echo=False)
+        self.engine = create_engine(f"sqlite:///{self.db_path}", echo=False)
         self.db_metadata = MetaData(self.engine)
         self.data_table = self.create_table("DATA")
         self.metadata_table = self.create_table("METADATA")

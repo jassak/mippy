@@ -25,9 +25,9 @@ Medical Informatics Platform in python
 7. Run Logistic Regression on 3 local DBs:
     - Instantiate three local servers
         ```bash
-       python3 scr/logistic_regression/server.py 
+       python scr/logistic_regression.py --mode=server 
        ```
     - Run logistic client in separate shell (you need to activate venv again)
         ```bash
-        python3 src/logistic_regression/client.py
+        python src/logistic_regression.py --mode=client
        ```
