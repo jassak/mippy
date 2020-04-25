@@ -12,7 +12,7 @@ class LocalNodesException(Exception):
 class LocalNodes:
     def __init__(self, names, datasets):
         self.datasets = datasets
-        self.nodes = [Pyro4.Proxy(name) for name in names]
+        self.nodes = [Pyro4.Proxy(f"PYRONAME:{name}") for name in names]
         node_datasets = self.run("get_datasets")
 
         # Get only the nodes that are needed
@@ -31,5 +31,6 @@ class LocalNodes:
         except Pyro4.errors.CommunicationError as e:
             logging.error(e)
             raise LocalNodesException("Unresponsive node.")
-        except AttributeError:
+        except AttributeError as e:
+            logging.error(e)
             raise LocalNodesException(f"Method could not be found: {method}")
