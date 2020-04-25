@@ -15,7 +15,7 @@ class LocalNodes:
     def __init__(self, names, datasets):
         self.datasets = datasets
         self.nodes = [Pyro4.Proxy(f"PYRONAME:{name}") for name in names]
-        node_datasets = self.run("get_datasets")
+        node_datasets = self.get_datasets()
 
         # Get only the nodes that are needed
         nodes_needed = []
@@ -27,9 +27,9 @@ class LocalNodes:
         self.nodes = nodes_needed
 
     def __getattr__(self, method):
-        return partial(self.run, method)
+        return partial(self._run, method)
 
-    def run(self, method, *args, **kwargs):
+    def _run(self, method, *args, **kwargs):
         try:
             return [getattr(node, method)(*args, **kwargs) for node in self.nodes]
         except Pyro4.errors.CommunicationError as e:
