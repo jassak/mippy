@@ -20,7 +20,7 @@ class DataBase(object):
         return Table(table_name, self.db_metadata, autoload=True)
 
     def read_data_from_db(self, parameters):
-        columns = sum((col.names for col in parameters.columns.values()), [])
+        columns = sum((cols for cols in parameters.columns.values()), [])
 
         data = self.select_columns_from_data(
             columns=columns, dataset=parameters.datasets, filter=parameters.filter

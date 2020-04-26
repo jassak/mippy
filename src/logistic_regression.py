@@ -6,6 +6,7 @@ import Pyro4
 
 from localnodes import LocalNode, start_server, n_nodes
 from centralnode import CentralNode
+from parameters import parse_args, get_parameters
 
 properties = Dict(
     {
@@ -24,14 +25,10 @@ properties = Dict(
                 },
             },
             "datasets": ["adni"],
-            "filter": {"alzheimerbroadcategory": ["CN", "AD"]},
+            "filter": None,
         },
     }
 )
-
-n_obs = 1000
-n_cols = len(properties.parameters.columns.features.names) + 1
-ntot_obs = n_obs * n_nodes
 
 
 class LogisticRegressionCentral(CentralNode):
@@ -39,7 +36,9 @@ class LogisticRegressionCentral(CentralNode):
         super().__init__(datasets)
 
     def run(self):
-        coeff, ll = self.init_model(n_cols, ntot_obs)
+        n_feat = self.nodes[0].get_num_features()
+        n_obs = sum(self.nodes.get_num_obs())
+        coeff, ll = self.init_model(n_feat, n_obs)
         while True:
             print(f"loss: {-ll}")
             res = self.nodes.get_local_parameters(coeff.tolist())
@@ -59,9 +58,9 @@ class LogisticRegressionCentral(CentralNode):
         return grad, hess, ll_new
 
     @staticmethod
-    def init_model(n_cols: int, n_obs: int):
+    def init_model(n_feat: int, n_obs: int):
         ll = -2 * n_obs * np.log(2)
-        coeff = np.zeros(n_cols)
+        coeff = np.zeros(n_feat + 1)
         return coeff, ll
 
     @staticmethod
@@ -72,23 +71,31 @@ class LogisticRegressionCentral(CentralNode):
 
 
 class LogisticRegressionLocal(LocalNode):
-    def __init__(self, idx):
-        super().__init__(idx)
-        data = self.db.read_data_from_db(properties.parameters)
-        self.prepare_data(data)
+    def __init__(self, idx, params):
+        super().__init__(idx, params)
+        pass
 
-    def prepare_data(self, data: pd.DataFrame):
-        self.X = data[properties.parameters.columns.features.names]
-        self.X["Intercept"] = 1
-        self.X = self.X[[self.X.columns[-1]] + self.X.columns[:-1].tolist()]
-        self.X = np.array(self.X)
-        self.y = data[properties.parameters.columns.target.names]
-        self.y = np.array(pd.get_dummies(self.y).iloc[:, 0])
+    def prepare_data(self):
+        X = self.data[self.params.columns.features]
+        X["Intercept"] = 1
+        X = X[[X.columns[-1]] + X.columns[:-1].tolist()]
+        X = np.array(X)
+        y = self.data[self.params.columns.target]
+        y = np.array(pd.get_dummies(y).iloc[:, 0])
+        return X, y
+
+    @Pyro4.expose
+    def get_num_features(self):
+        return len(self.params.columns.features)
+
+    @Pyro4.expose
+    def get_num_obs(self):
+        return len(self.data)
 
     @Pyro4.expose
     def get_local_parameters(self, coeff: np.ndarray):
         coeff = np.array(coeff)
-        X, y = self.X, self.y
+        X, y = self.prepare_data()
 
         z = X @ coeff
         s = expit(z)
@@ -107,18 +114,10 @@ class LogisticRegressionLocal(LocalNode):
 
 
 if __name__ == "__main__":
-    import argparse
-    import sys
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        required=True,
-        help="Mode should be server (for local nodes) of client (for central node).",
-    )
-    args = parser.parse_args(sys.argv[1:])
+    args = parse_args(properties)
+    parameters = get_parameters(properties, args)
     if args.mode == "server":
-        start_server(local_node=LogisticRegressionLocal)
+        start_server(local_node=LogisticRegressionLocal, parameters=parameters)
     elif args.mode == "client":
         import time
 

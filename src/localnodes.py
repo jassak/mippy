@@ -11,11 +11,13 @@ db_root = Path(__file__).parent.parent / "dbs"
 
 
 class LocalNode:
-    def __init__(self, idx: int):
+    def __init__(self, idx, params):
         self.idx = idx
+        self.params = params
         print(f"Started server on node {idx}")
         db_path = db_root / f"local_dataset{idx}.db"
         self.db = DataBase(db_path=db_path)
+        self.data = self.db.read_data_from_db(params)
 
     def __repr__(self):
         cls = type(self).__name__
@@ -24,6 +26,10 @@ class LocalNode:
     @Pyro4.expose
     def get_datasets(self):
         return ["adni", "ppmi", "edsd"]
+
+    @Pyro4.expose
+    def get_columns(self):
+        return [str(col) for col in self.data.columns]
 
 
 class LocalNodes:
@@ -58,11 +64,11 @@ class LocalNodes:
             raise LocalNodesError(f"Method could not be found: {method}")
 
 
-def start_server(local_node: Type[LocalNode]):
+def start_server(*, local_node: Type[LocalNode], parameters):
     daemon = Pyro4.Daemon()
     ns = Pyro4.locateNS()
     [
-        ns.register(f"local_node{i}", daemon.register(local_node(i)))
+        ns.register(f"local_node{i}", daemon.register(local_node(i, parameters)))
         for i in range(n_nodes)
     ]
     daemon.requestLoop()
