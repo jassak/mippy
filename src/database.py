@@ -23,7 +23,7 @@ class DataBase(object):
         columns = sum((col.names for col in parameters.columns.values()), [])
 
         data = self.select_columns_from_data(
-            columns=columns, dataset=parameters.dataset, filter=parameters.filter
+            columns=columns, dataset=parameters.datasets, filter=parameters.filter
         )
         return data
 

@@ -4,7 +4,7 @@ from scipy.special import expit, xlogy
 from addict import Dict
 import Pyro4
 
-from localnode import LocalNode, start_server, n_nodes
+from localnodes import LocalNode, start_server, n_nodes
 from centralnode import CentralNode
 
 properties = Dict(
@@ -23,7 +23,7 @@ properties = Dict(
                     "types": ["numerical"],
                 },
             },
-            "dataset": ["adni"],
+            "datasets": ["adni"],
             "filter": {"alzheimerbroadcategory": ["CN", "AD"]},
         },
     }
@@ -72,8 +72,8 @@ class LogisticRegressionCentral(CentralNode):
 
 
 class LogisticRegressionLocal(LocalNode):
-    def __init__(self, node):
-        super().__init__(node)
+    def __init__(self, idx):
+        super().__init__(idx)
         data = self.db.read_data_from_db(properties.parameters)
         self.prepare_data(data)
 
@@ -105,10 +105,6 @@ class LogisticRegressionLocal(LocalNode):
         ll = np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s))
         return grad.tolist(), hess.tolist(), ll
 
-    @Pyro4.expose
-    def get_datasets(self):
-        return ["adni", "ppmi", "edsd"]
-
 
 if __name__ == "__main__":
     import argparse
@@ -127,6 +123,6 @@ if __name__ == "__main__":
         import time
 
         s = time.perf_counter()
-        LogisticRegressionCentral("adni").run()
+        LogisticRegressionCentral(properties.parameters.datasets).run()
         elapsed = time.perf_counter() - s
         print(f"\nExecuted in {elapsed:0.2f} seconds.")
