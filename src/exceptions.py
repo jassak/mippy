@@ -1,0 +1,2 @@
+class LocalNodesError(Exception):
+    pass

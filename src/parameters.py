@@ -1,7 +1,8 @@
 from addict import Dict
 
 
-def get_parameters(properties: Dict, args) -> Dict:
+def get_parameters(properties: Dict) -> Dict:
+    args = parse_args(properties)
     parameters = Dict()
     for name, column in properties.parameters.columns.items():
         if getattr(args, name):
@@ -24,11 +25,6 @@ def parse_args(properties: Dict):
     import sys
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        required=True,
-        help="Mode should be server (for local nodes) of client (for central node).",
-    )
     for column in params.columns.keys():
         parser.add_argument(f"--{column}")
     for param in params.keys():

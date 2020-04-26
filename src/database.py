@@ -43,3 +43,11 @@ class DataBase(object):
         values = [v for v in filter_.values()][0]
         key = [k for k in filter_.keys()][0]
         return or_(*[self.data_table.c[key] == val for val in values])
+
+    def get_datasets(self):
+        stmt = select([self.data_table.c.dataset])
+        res = self.engine.execute(stmt)
+        datasets = set()
+        for row in res:
+            datasets.add(str(row[0]))
+        return datasets

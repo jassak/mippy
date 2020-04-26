@@ -1,14 +1,13 @@
-from typing import Type, Tuple
+from typing import Tuple
 
+import Pyro4
 import numpy as np
 import pandas as pd
-from scipy.special import expit, xlogy
 from addict import Dict
-import Pyro4
+from scipy.special import expit, xlogy
 
-from localnodes import LocalNode, start_server, n_nodes
-from centralnode import CentralNode
-from parameters import parse_args, get_parameters
+from nodes import Master, Worker
+from parameters import get_parameters
 
 properties = Dict(
     {
@@ -27,18 +26,20 @@ properties = Dict(
                 },
             },
             "datasets": ["adni"],
-            "filter": None,
+            "filter": {"alzheimerbroadcategory": ["CN", "AD"]},
         },
     }
 )
 
 
-class LogisticRegressionCentral(CentralNode):
-    def __init__(self, params: Type[Dict]):
+class LogisticRegressionMaster(Master):
+    def __init__(self, params: Dict):
         super().__init__(params.datasets)
+        self.nodes.set_workers(params)
+        pass
 
     def run(self):
-        n_feat = self.nodes[0].get_num_features()
+        n_feat = self.nodes.get_num_features()[0]
         n_obs = sum(self.nodes.get_num_obs())
         coeff, ll = self.init_model(n_feat, n_obs)
         while True:
@@ -72,12 +73,12 @@ class LogisticRegressionCentral(CentralNode):
         return coeff
 
 
-class LogisticRegressionLocal(LocalNode):
-    def __init__(self, idx: int, params: Type[Dict]):
-        super().__init__(idx, params)
+class LogisticRegressionWorker(Worker):
+    def __init__(self, idx: int):
+        super().__init__(idx)
 
     def prepare_data(self) -> Tuple:
-        X = self.data[self.params.columns.features]
+        X = self.data[self.params["columns"]["features"]]
         X["Intercept"] = 1
         X = X[[X.columns[-1]] + X.columns[:-1].tolist()]
         X = np.array(X)
@@ -87,7 +88,7 @@ class LogisticRegressionLocal(LocalNode):
 
     @Pyro4.expose
     def get_num_features(self) -> int:
-        return len(self.params.columns.features)
+        return len(self.params["columns"]["features"])
 
     @Pyro4.expose
     def get_num_obs(self) -> int:
@@ -115,14 +116,11 @@ class LogisticRegressionLocal(LocalNode):
 
 
 if __name__ == "__main__":
-    args = parse_args(properties)
-    parameters = get_parameters(properties, args)
-    if args.mode == "server":
-        start_server(local_node=LogisticRegressionLocal, parameters=parameters)
-    elif args.mode == "client":
-        import time
+    parameters = get_parameters(properties)
 
-        s = time.perf_counter()
-        LogisticRegressionCentral(parameters).run()
-        elapsed = time.perf_counter() - s
-        print(f"\nExecuted in {elapsed:0.2f} seconds.")
+    import time
+
+    s = time.perf_counter()
+    LogisticRegressionMaster(parameters).run()
+    elapsed = time.perf_counter() - s
+    print(f"\nExecuted in {elapsed:0.2f} seconds.")
