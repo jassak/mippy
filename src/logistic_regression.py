@@ -1,3 +1,5 @@
+from typing import Type, Tuple
+
 import numpy as np
 import pandas as pd
 from scipy.special import expit, xlogy
@@ -32,8 +34,8 @@ properties = Dict(
 
 
 class LogisticRegressionCentral(CentralNode):
-    def __init__(self, datasets):
-        super().__init__(datasets)
+    def __init__(self, params: Type[Dict]):
+        super().__init__(params.datasets)
 
     def run(self):
         n_feat = self.nodes[0].get_num_features()
@@ -51,14 +53,14 @@ class LogisticRegressionCentral(CentralNode):
         print(f"\nDone!\n  loss= {-ll},\n  model coefficients = {coeff}")
 
     @staticmethod
-    def merge_local_results(res: list):
+    def merge_local_results(res: list) -> Tuple:
         grad = sum(np.array(r[0]) for r in res)
         hess = sum(np.array(r[1]) for r in res)
         ll_new = sum(r[2] for r in res)
         return grad, hess, ll_new
 
     @staticmethod
-    def init_model(n_feat: int, n_obs: int):
+    def init_model(n_feat: int, n_obs: int) -> Tuple:
         ll = -2 * n_obs * np.log(2)
         coeff = np.zeros(n_feat + 1)
         return coeff, ll
@@ -71,11 +73,10 @@ class LogisticRegressionCentral(CentralNode):
 
 
 class LogisticRegressionLocal(LocalNode):
-    def __init__(self, idx, params):
+    def __init__(self, idx: int, params: Type[Dict]):
         super().__init__(idx, params)
-        pass
 
-    def prepare_data(self):
+    def prepare_data(self) -> Tuple:
         X = self.data[self.params.columns.features]
         X["Intercept"] = 1
         X = X[[X.columns[-1]] + X.columns[:-1].tolist()]
@@ -85,15 +86,15 @@ class LogisticRegressionLocal(LocalNode):
         return X, y
 
     @Pyro4.expose
-    def get_num_features(self):
+    def get_num_features(self) -> int:
         return len(self.params.columns.features)
 
     @Pyro4.expose
-    def get_num_obs(self):
+    def get_num_obs(self) -> int:
         return len(self.data)
 
     @Pyro4.expose
-    def get_local_parameters(self, coeff: np.ndarray):
+    def get_local_parameters(self, coeff: np.ndarray) -> Tuple:
         coeff = np.array(coeff)
         X, y = self.prepare_data()
 
@@ -122,6 +123,6 @@ if __name__ == "__main__":
         import time
 
         s = time.perf_counter()
-        LogisticRegressionCentral(properties.parameters.datasets).run()
+        LogisticRegressionCentral(parameters).run()
         elapsed = time.perf_counter() - s
         print(f"\nExecuted in {elapsed:0.2f} seconds.")

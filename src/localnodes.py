@@ -1,6 +1,7 @@
 from functools import partial
 import itertools
-from typing import Type, List
+from typing import Type, List, Mapping
+from addict import Dict
 from pathlib import Path
 import Pyro4
 
@@ -11,13 +12,13 @@ db_root = Path(__file__).parent.parent / "dbs"
 
 
 class LocalNode:
-    def __init__(self, idx, params):
+    def __init__(self, idx: int, parameters: Dict):
         self.idx = idx
-        self.params = params
+        self.params = parameters
         print(f"Started server on node {idx}")
         db_path = db_root / f"local_dataset{idx}.db"
         self.db = DataBase(db_path=db_path)
-        self.data = self.db.read_data_from_db(params)
+        self.data = self.db.read_data_from_db(parameters)
 
     def __repr__(self):
         cls = type(self).__name__
@@ -28,7 +29,7 @@ class LocalNode:
         return ["adni", "ppmi", "edsd"]
 
     @Pyro4.expose
-    def get_columns(self):
+    def get_columns(self) -> List[str]:
         return [str(col) for col in self.data.columns]
 
 
@@ -57,14 +58,14 @@ class LocalNodes:
 
     def _run(self, method: str, *args, **kwargs):
         try:
-            return [getattr(node, method)(*args, **kwargs) for node in self._nodes]
+            return [getattr(node, method)(*args, **kwargs) for node in self]
         except Pyro4.errors.CommunicationError as e:
             raise LocalNodesError("Unresponsive node.")
         except AttributeError as e:
             raise LocalNodesError(f"Method could not be found: {method}")
 
 
-def start_server(*, local_node: Type[LocalNode], parameters):
+def start_server(*, local_node: Type[LocalNode], parameters: Dict):
     daemon = Pyro4.Daemon()
     ns = Pyro4.locateNS()
     [

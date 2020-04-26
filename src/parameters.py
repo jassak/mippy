@@ -1,7 +1,7 @@
 from addict import Dict
 
 
-def get_parameters(properties, args):
+def get_parameters(properties: Dict, args) -> Dict:
     parameters = Dict()
     for name, column in properties.parameters.columns.items():
         if getattr(args, name):
@@ -18,7 +18,7 @@ def get_parameters(properties, args):
     return parameters
 
 
-def parse_args(properties):
+def parse_args(properties: Dict):
     params = properties.parameters
     import argparse
     import sys
