@@ -23,11 +23,11 @@ Medical Informatics Platform in python
    pyro4-ns 
    ```
 7. Run Logistic Regression on 3 local DBs:
-    - Instantiate three local servers
+    - Instantiate servers on three local nodes
         ```bash
-       python src/logistic_regression.py --mode=server 
+       python src/localnode.py
        ```
     - Run logistic client in separate shell (you need to activate venv again)
         ```bash
-        python src/logistic_regression.py --mode=client
+        python src/logistic_regression.py
        ```
