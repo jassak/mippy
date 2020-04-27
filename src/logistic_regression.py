@@ -4,10 +4,9 @@ import Pyro4
 import numpy as np
 import pandas as pd
 from addict import Dict
-from scipy.special import expit, xlogy
-
-from nodes import Master, Worker
+from baseclasses import Master, Worker
 from parameters import get_parameters
+from scipy.special import expit, xlogy
 
 properties = Dict(
     {
@@ -34,12 +33,10 @@ properties = Dict(
 
 class LogisticRegressionMaster(Master):
     def __init__(self, params: Dict):
-        super().__init__(params.datasets)
-        self.nodes.set_workers(params)
-        pass
+        super().__init__(params)
 
     def run(self):
-        n_feat = self.nodes.get_num_features()[0]
+        n_feat = self.nodes[0].get_num_features()
         n_obs = sum(self.nodes.get_num_obs())
         coeff, ll = self.init_model(n_feat, n_obs)
         while True:

@@ -1,15 +1,14 @@
-from pathlib import Path
 from typing import Mapping
 
 import Pyro4
 import Pyro4.errors
 from addict import Dict
-
+from baseclasses import n_nodes
 from database import DataBase
 from logistic_regression import LogisticRegressionWorker
-from nodes import n_nodes
+from src import root
 
-db_root = Path(__file__).parent.parent / "dbs"
+db_root = root / "dbs"
 
 
 class LocalNode:
