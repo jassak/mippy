@@ -2,7 +2,6 @@ from typing import Tuple
 
 import Pyro4
 import numpy as np
-import pandas as pd
 from addict import Dict
 from baseclasses import Master, Worker
 from parameters import get_parameters
@@ -26,36 +25,34 @@ properties = Dict(
             },
             "datasets": ["adni"],
             "filter": {"alzheimerbroadcategory": ["CN", "AD"]},
+            "outcome": "AD",
         },
     }
 )
 
 
 class LogisticRegressionMaster(Master):
-    def __init__(self, params: Dict):
-        super().__init__(params)
-
     def run(self):
         n_feat = self.nodes[0].get_num_features()
         n_obs = sum(self.nodes.get_num_obs())
-        coeff, ll = self.init_model(n_feat, n_obs)
+        coeff, loglike = self.init_model(n_feat, n_obs)
         while True:
-            print(f"loss: {-ll}")
-            res = self.nodes.get_local_parameters(coeff.tolist())
-            grad, hess, ll_new = self.merge_local_results(res)
+            print(f"loss: {-loglike}")
+            res = self.nodes.get_loss_and_derivatives(coeff.tolist())
+            loglike_new, grad, hess = self.merge_local_results(res)
 
             coeff = self.update_coefficients(grad, hess)
-            if abs((ll - ll_new) / ll) <= 1e-6:
+            if abs((loglike - loglike_new) / loglike) <= 1e-6:
                 break
-            ll = ll_new
-        print(f"\nDone!\n  loss= {-ll},\n  model coefficients = {coeff}")
+            loglike = loglike_new
+        print(f"\nDone!\n  loss= {-loglike},\n  model coefficients = {coeff}")
 
     @staticmethod
     def merge_local_results(res: list) -> Tuple:
-        grad = sum(np.array(r[0]) for r in res)
-        hess = sum(np.array(r[1]) for r in res)
-        ll_new = sum(r[2] for r in res)
-        return grad, hess, ll_new
+        loglike = sum(r[0] for r in res)
+        grad = sum(np.array(r[1]) for r in res)
+        hess = sum(np.array(r[2]) for r in res)
+        return loglike, grad, hess
 
     @staticmethod
     def init_model(n_feat: int, n_obs: int) -> Tuple:
@@ -71,30 +68,16 @@ class LogisticRegressionMaster(Master):
 
 
 class LogisticRegressionWorker(Worker):
-    def __init__(self, idx: int):
-        super().__init__(idx)
-
-    def prepare_data(self) -> Tuple:
-        X = self.data[self.params["columns"]["features"]]
-        X["Intercept"] = 1
-        X = X[[X.columns[-1]] + X.columns[:-1].tolist()]
-        X = np.array(X)
-        y = self.data[self.params.columns.target]
-        y = np.array(pd.get_dummies(y).iloc[:, 0])
-        return X, y
-
     @Pyro4.expose
     def get_num_features(self) -> int:
         return len(self.params["columns"]["features"])
 
     @Pyro4.expose
-    def get_num_obs(self) -> int:
-        return len(self.data)
-
-    @Pyro4.expose
-    def get_local_parameters(self, coeff: np.ndarray) -> Tuple:
+    def get_loss_and_derivatives(self, coeff: list) -> Tuple:
         coeff = np.array(coeff)
-        X, y = self.prepare_data()
+        X = self.get_design_matrix(self.params.columns.features)
+        y = self.get_target_column(self.params.columns.target, self.params.outcome)
+        X, y = np.array(X), np.array(y)
 
         z = X @ coeff
         s = expit(z)
@@ -108,8 +91,8 @@ class LogisticRegressionWorker(Worker):
 
         grad = X.T @ D @ (z + y_ratio)
 
-        ll = np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s))
-        return grad.tolist(), hess.tolist(), ll
+        loglike = np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s))
+        return loglike, grad.tolist(), hess.tolist()
 
 
 if __name__ == "__main__":
