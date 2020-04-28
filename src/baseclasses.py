@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Tuple
 from abc import ABC, abstractmethod
 
 import Pyro4
+import numpy as np
 import pandas as pd
 from addict import Dict
 from workingnodes import WorkingNodes
@@ -21,6 +22,13 @@ class Master(ABC):
     @abstractmethod
     def run(self):
         """Main execution of algorithm. Should be implemented in child classes."""
+
+    @staticmethod
+    def sum_local_results(res: list) -> Tuple:
+        merged = []
+        for i in range(len(res[0])):
+            merged.append(sum(np.array(r[i]) for r in res))
+        return tuple(merged)
 
 
 class Worker(ABC):
