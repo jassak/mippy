@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import or_, Table, select, create_engine, MetaData
 
+__all__ = ["DataBase"]
+
 
 class DataBase(object):
     def __init__(self, db_path):

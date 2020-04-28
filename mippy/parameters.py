@@ -3,9 +3,11 @@ import sys
 
 from addict import Dict
 
+__all__ = ["get_parameters"]
+
 
 def get_parameters(properties: Dict) -> Dict:
-    args = parse_args(properties.parameters)
+    args = _parse_args(properties.parameters)
     parameters = Dict()
     for name, column in properties.parameters.columns.items():
         if getattr(args, name):
@@ -23,7 +25,7 @@ def get_parameters(properties: Dict) -> Dict:
     return parameters
 
 
-def parse_args(params: Dict) -> argparse.Namespace:
+def _parse_args(params: Dict) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     for column in params.columns.keys():
         parser.add_argument(f"--{column}")
@@ -31,5 +33,5 @@ def parse_args(params: Dict) -> argparse.Namespace:
         if param == "columns":
             continue
         parser.add_argument(f"--{param}")
-    args = parser.parse_args(sys.argv[1:])
+    args, _ = parser.parse_known_args(sys.argv[1:])
     return args

@@ -3,14 +3,16 @@ from typing import Mapping, Type
 import Pyro4
 import Pyro4.errors
 from addict import Dict
-from baseclasses import n_nodes, Worker
-from database import DataBase
-from logistic_regression import LogisticRegressionWorker
-from pca import PCAWorker
-from src import root
+from mippy.database import DataBase
+from mippy.baseclasses import Worker
+from mippy import root
+from mippy.ml.logistic_regression import LogisticRegressionWorker
+from mippy.ml.pca import PCAWorker
+
+__all__ = ["LocalNode", "start_server"]
 
 workers = {"logistic regression": LogisticRegressionWorker, "pca": PCAWorker}
-
+n_nodes = 3
 db_root = root / "dbs"
 
 

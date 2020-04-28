@@ -3,9 +3,11 @@ from typing import Tuple
 import Pyro4
 import numpy as np
 from addict import Dict
-from baseclasses import Master, Worker
-from parameters import get_parameters
+from mippy.baseclasses import Master, Worker
+from mippy.parameters import get_parameters
 from scipy.special import expit, xlogy
+
+__all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker", "properties"]
 
 properties = Dict(
     {

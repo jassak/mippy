@@ -1,14 +1,14 @@
-from typing import List, Tuple
 from abc import ABC, abstractmethod
+from typing import List, Tuple
 
 import Pyro4
 import numpy as np
 import pandas as pd
 from addict import Dict
-from workingnodes import WorkingNodes
+from mippy.workingnodes import WorkingNodes
 
+__all__ = ["Master", "Worker"]
 n_nodes = 3
-
 
 class Master(ABC):
     def __init__(self, params: Dict):

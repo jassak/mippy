@@ -1,8 +1,10 @@
 import Pyro4
 import numpy as np
 from addict import Dict
-from baseclasses import Master, Worker
-from parameters import get_parameters
+from mippy.baseclasses import Master, Worker
+from mippy.parameters import get_parameters
+
+__all__ = ["PCAWorker", "PCAMaster"]
 
 properties = Dict(
     {

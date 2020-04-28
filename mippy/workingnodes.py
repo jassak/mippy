@@ -4,7 +4,9 @@ from typing import List
 import Pyro4
 from Pyro4.errors import CommunicationError
 from addict import Dict
-from exceptions import LocalNodesError
+from .exceptions import LocalNodesError
+
+__all__ = ["WorkingNode", "WorkingNodes"]
 
 
 class WorkingNode:
