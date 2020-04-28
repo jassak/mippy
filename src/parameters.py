@@ -1,8 +1,11 @@
+import argparse
+import sys
+
 from addict import Dict
 
 
 def get_parameters(properties: Dict) -> Dict:
-    args = parse_args(properties)
+    args = parse_args(properties.parameters)
     parameters = Dict()
     for name, column in properties.parameters.columns.items():
         if getattr(args, name):
@@ -16,14 +19,11 @@ def get_parameters(properties: Dict) -> Dict:
             parameters[name] = getattr(args, name).split(",")
         else:
             parameters[name] = param
+    parameters.task = properties.name
     return parameters
 
 
-def parse_args(properties: Dict):
-    params = properties.parameters
-    import argparse
-    import sys
-
+def parse_args(params: Dict) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     for column in params.columns.keys():
         parser.add_argument(f"--{column}")

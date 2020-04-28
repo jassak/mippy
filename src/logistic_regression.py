@@ -9,7 +9,7 @@ from scipy.special import expit, xlogy
 
 properties = Dict(
     {
-        "name": "Logistic Regression",
+        "name": "logistic regression",
         "parameters": {
             "columns": {
                 "target": {
@@ -38,7 +38,7 @@ class LogisticRegressionMaster(Master):
         coeff, loglike = self.init_model(n_feat, n_obs)
         while True:
             print(f"loss: {-loglike}")
-            res = self.nodes.get_loss_and_derivatives(coeff.tolist())
+            res = self.nodes.get_loss_function(coeff.tolist())
             loglike_new, grad, hess = self.merge_local_results(res)
 
             coeff = self.update_coefficients(grad, hess)
@@ -48,20 +48,20 @@ class LogisticRegressionMaster(Master):
         print(f"\nDone!\n  loss= {-loglike},\n  model coefficients = {coeff}")
 
     @staticmethod
-    def merge_local_results(res: list) -> Tuple:
+    def merge_local_results(res: list) -> Tuple[float, np.ndarray, np.ndarray]:
         loglike = sum(r[0] for r in res)
         grad = sum(np.array(r[1]) for r in res)
         hess = sum(np.array(r[2]) for r in res)
         return loglike, grad, hess
 
     @staticmethod
-    def init_model(n_feat: int, n_obs: int) -> Tuple:
+    def init_model(n_feat: int, n_obs: int) -> Tuple[np.ndarray, float]:
         ll = -2 * n_obs * np.log(2)
         coeff = np.zeros(n_feat + 1)
         return coeff, ll
 
     @staticmethod
-    def update_coefficients(grad: np.ndarray, hess: np.ndarray):
+    def update_coefficients(grad: np.ndarray, hess: np.ndarray) -> np.ndarray:
         covariance = np.linalg.inv(hess)
         coeff = covariance @ grad
         return coeff
@@ -73,7 +73,7 @@ class LogisticRegressionWorker(Worker):
         return len(self.params["columns"]["features"])
 
     @Pyro4.expose
-    def get_loss_and_derivatives(self, coeff: list) -> Tuple:
+    def get_loss_function(self, coeff: list) -> Tuple[float, list, list]:
         coeff = np.array(coeff)
         X = self.get_design_matrix(self.params.columns.features)
         y = self.get_target_column(self.params.columns.target, self.params.outcome)
@@ -91,7 +91,7 @@ class LogisticRegressionWorker(Worker):
 
         grad = X.T @ D @ (z + y_ratio)
 
-        loglike = np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s))
+        loglike = float(np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s)))
         return loglike, grad.tolist(), hess.tolist()
 
 
@@ -103,4 +103,4 @@ if __name__ == "__main__":
     s = time.perf_counter()
     LogisticRegressionMaster(parameters).run()
     elapsed = time.perf_counter() - s
-    print(f"\nExecuted in {elapsed:0.2f} seconds.")
+    print(f"\nExecuted in {elapsed:0.3f} seconds.")
