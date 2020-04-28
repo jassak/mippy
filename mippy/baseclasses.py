@@ -5,10 +5,10 @@ import Pyro4
 import numpy as np
 import pandas as pd
 from addict import Dict
+from mippy import n_nodes
 from mippy.workingnodes import WorkingNodes
 
 __all__ = ["Master", "Worker"]
-n_nodes = 3
 
 
 class Master(ABC):
@@ -61,7 +61,7 @@ class Worker(ABC):
 
     def load_data(self, parameters: Dict, db) -> None:
         self.params = parameters
-        self.data = db.read_data_from_db(parameters)
+        self.data = db.read_data(parameters)
 
     @Pyro4.expose
     def get_num_obs(self) -> int:

@@ -1,5 +1,6 @@
 import Pyro4
 from addict import Dict
+import pprint
 
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
@@ -43,8 +44,10 @@ class NaiveBayesMaster(Master):
             parameter = (count + alpha) / (target_count + n_obs * alpha)
             theta[key] = parameter
 
+        pp = pprint.PrettyPrinter(indent=4)
         print('\nDone!\n')
-        print(f"model parameres = \n{theta}")
+        print("model parameres = \n")
+        pp.pprint(theta)
 
 
 class NaiveBayesWorker(Worker):
