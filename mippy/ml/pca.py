@@ -32,11 +32,11 @@ class PCAMaster(Master):
     def run(self):
         n_obs = sum(self.nodes.get_num_obs())
         res = self.nodes.get_local_sums()
-        sx, sxx = self.sum_local_results(res)
+        sx, sxx = self.sum_local_arrays(res)
         sx, sxx = np.array(sx), np.array(sxx)
         means, sigmas = self.get_moments(n_obs, sx, sxx)
         res = self.nodes.get_standardized_gramian(means.tolist(), sigmas.tolist())
-        gramian = self.sum_local_results(res)
+        gramian = self.sum_local_arrays(res)
         gramian = np.array(gramian)
         covariance = np.divide(gramian, n_obs - 1)
         eigenvalues, eigenvectors = np.linalg.eigh(covariance)
@@ -44,8 +44,9 @@ class PCAMaster(Master):
         eigenvalues = eigenvalues[idx]
         eigenvectors = eigenvectors[:, idx]
         eigenvectors = eigenvectors.T
-        print(eigenvalues)
-        print(eigenvectors)
+        print("Done!\n")
+        print(f"eigenvalues = \n{eigenvalues}\n")
+        print(f"eigenvectors = \n{eigenvectors}\n")
 
     @staticmethod
     def get_moments(n_obs, sx, sxx):

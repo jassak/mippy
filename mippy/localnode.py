@@ -8,10 +8,15 @@ from mippy.baseclasses import Worker
 from mippy import root
 from mippy.ml.logistic_regression import LogisticRegressionWorker
 from mippy.ml.pca import PCAWorker
+from mippy.ml.naive_bayes import NaiveBayesWorker
 
 __all__ = ["LocalNode", "start_server"]
 
-workers = {"logistic regression": LogisticRegressionWorker, "pca": PCAWorker}
+workers = {
+    "logistic regression": LogisticRegressionWorker,
+    "pca": PCAWorker,
+    "naive bayes": NaiveBayesWorker,
+}
 n_nodes = 3
 db_root = root / "dbs"
 

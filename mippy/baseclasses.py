@@ -10,6 +10,7 @@ from mippy.workingnodes import WorkingNodes
 __all__ = ["Master", "Worker"]
 n_nodes = 3
 
+
 class Master(ABC):
     def __init__(self, params: Dict):
         self.nodes = WorkingNodes([f"local_node{i}" for i in range(n_nodes)], params)
@@ -24,11 +25,28 @@ class Master(ABC):
         """Main execution of algorithm. Should be implemented in child classes."""
 
     @staticmethod
-    def sum_local_results(res: list) -> Tuple:
+    def sum_local_arrays(res: list) -> Tuple:
         merged = []
         for i in range(len(res[0])):
             merged.append(sum(np.array(r[i]) for r in res))
         return tuple(merged)
+
+    @staticmethod
+    def sum_local_dictionary(res: list):
+        merged_dict = {}
+        for key in res[0].keys():
+            total = sum(d[key] for d in res)
+            merged_dict[key] = total
+        return merged_dict
+
+    def sum_local_dictionaries(self, res):
+        merged = []
+        for i in range(len(res[0])):
+            lst = []
+            for j in range(len(res)):
+                lst.append(res[j][i])
+            merged.append(self.sum_local_dictionary(lst))
+        return merged
 
 
 class Worker(ABC):

@@ -41,13 +41,15 @@ class LogisticRegressionMaster(Master):
         while True:
             print(f"loss: {-loglike}")
             res = self.nodes.get_loss_function(coeff.tolist())
-            loglike_new, grad, hess = self.sum_local_results(res)
+            loglike_new, grad, hess = self.sum_local_arrays(res)
 
             coeff = self.update_coefficients(grad, hess)
             if abs((loglike - loglike_new) / loglike) <= 1e-6:
                 break
             loglike = loglike_new
-        print(f"\nDone!\n  loss= {-loglike},\n  model coefficients = {coeff}")
+        print("\nDone!\n")
+        print(f"loss = {-loglike}\n")
+        print(f"model coefficients = \n{coeff}\n")
 
     @staticmethod
     def init_model(n_feat: int, n_obs: int) -> Tuple[np.ndarray, float]:
