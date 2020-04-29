@@ -3,8 +3,10 @@ from typing import List
 
 import Pyro4
 from Pyro4.errors import CommunicationError
+from Pyro4.errors import NamingError
 from addict import Dict
-from .exceptions import LocalNodesError
+from .exceptions import WorkingNodeError
+from .exceptions import WorkingNodesError
 
 __all__ = ["WorkingNode", "WorkingNodes"]
 
@@ -14,6 +16,7 @@ class WorkingNode:
         self._proxy = Pyro4.Proxy(f"PYRONAME:{name}")
         self.name = name
         self.params = params
+        self.datasets = None
         self.task = params.task
 
     def __getattr__(self, method):
@@ -25,12 +28,14 @@ class WorkingNode:
                 self.params, self.task, method, *args, **kwargs
             )
         except CommunicationError:
-            raise LocalNodesError(f"Unresponsive node {self.name}.")
+            raise WorkingNodeError(f"Unresponsive node {self.name}.")
+        except NamingError:
+            raise WorkingNodeError(f"Node {self.name} was removed.")
         except AttributeError:
-            raise LocalNodesError(f"Method {method} not be found on node {self.name}.")
+            raise WorkingNodeError(f"Method {method} not found on node {self.name}.")
 
     def get_datasets(self) -> set:
-        return self._proxy.get_datasets()
+        return self.datasets if self.datasets is not None else self._proxy.get_datasets()
 
     def run_on_worker(self, method: str, *args, **kwargs):
         return getattr(self._proxy.worker, method)(*args, **kwargs)
@@ -38,11 +43,19 @@ class WorkingNode:
 
 class WorkingNodes:
     def __init__(self, names: List[str], params: Dict):
-        self._nodes = [WorkingNode(name, params) for name in names]
+        self._nodes = [WorkingNode(name, params, ) for name in names]
+
+        if len(params.datasets) == 0:
+            return
+
+        all_datasets = [dataset for datasets in self.get_datasets() for dataset in datasets]
+        for dataset in params.datasets:
+            if dataset not in all_datasets:
+                raise WorkingNodesError(f"Dataset '{dataset}' could not be found on the active nodes.")
+
         self._nodes = [
             node for node in self if contains_any_dataset(node, params.datasets)
         ]
-        self.names = [node.name for node in self]
 
     def __len__(self):
         return len(self._nodes)
@@ -64,4 +77,4 @@ class WorkingNodes:
 
 
 def contains_any_dataset(node: WorkingNode, datasets: List[str]):
-    return bool(set(node.get_datasets() & set(datasets)))
+    return bool(set(node.get_datasets()) & set(datasets))

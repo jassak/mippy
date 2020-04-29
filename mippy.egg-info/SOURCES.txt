@@ -12,5 +12,7 @@ mippy.egg-info/SOURCES.txt
 mippy.egg-info/dependency_links.txt
 mippy.egg-info/top_level.txt
 mippy/ml/__init__.py
+mippy/ml/linear_regression.py
 mippy/ml/logistic_regression.py
+mippy/ml/naive_bayes.py
 mippy/ml/pca.py

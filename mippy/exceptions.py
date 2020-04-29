@@ -1,5 +1,8 @@
-__all__ = ["LocalNodesError"]
+__all__ = ["WorkingNodeError", "WorkingNodesError"]
 
 
-class LocalNodesError(Exception):
+class WorkingNodeError(Exception):
+    pass
+
+class WorkingNodesError(Exception):
     pass
