@@ -3,9 +3,9 @@ setup.py
 mippy/__init__.py
 mippy/baseclasses.py
 mippy/database.py
-mippy/exceptions.py
 mippy/localnode.py
 mippy/parameters.py
+mippy/reduce.py
 mippy/workingnodes.py
 mippy.egg-info/PKG-INFO
 mippy.egg-info/SOURCES.txt
