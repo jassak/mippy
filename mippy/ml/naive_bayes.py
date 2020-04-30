@@ -4,6 +4,7 @@ import pprint
 
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
+import mippy.merge as merge
 
 __all__ = ["NaiveBayesWorker", "NaiveBayesMaster"]
 
@@ -34,10 +35,8 @@ properties = Dict(
 class NaiveBayesMaster(Master):
     def run(self):
         alpha = self.params.alpha.value
-        res = self.nodes.get_counts()
-        target_counts, pair_counts = self.sum_local_dictionaries(res)
+        target_counts, pair_counts = self.nodes.get_counts()
         n_obs = sum(count for count in target_counts.values())
-
         theta = {}
         for key, count in pair_counts.items():
             target_count = target_counts[key[0]]
@@ -52,6 +51,7 @@ class NaiveBayesMaster(Master):
 
 class NaiveBayesWorker(Worker):
     @Pyro4.expose
+    @merge.rules("add_dict", "add_dict")
     def get_counts(self):
         X = self.get_design_matrix(
             self.params.columns.features + self.params.columns.target, intercept=False

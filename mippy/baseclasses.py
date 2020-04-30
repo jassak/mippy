@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Tuple, Union
+from functools import reduce
 
 import Pyro4
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 from addict import Dict
 from mippy import n_nodes
 from mippy.workingnodes import WorkingNodes
+import mippy.merge as merge
 
 __all__ = ["Master", "Worker"]
 
@@ -25,28 +27,27 @@ class Master(ABC):
         """Main execution of algorithm. Should be implemented in child classes."""
 
     @staticmethod
-    def sum_local_arrays(res: list) -> Tuple:
-        merged = []
-        for i in range(len(res[0])):
-            merged.append(sum(np.array(r[i]) for r in res))
-        return tuple(merged)
-
-    @staticmethod
-    def sum_local_dictionary(res: list):
-        merged_dict = {}
-        for key in res[0].keys():
-            total = sum(d[key] for d in res)
-            merged_dict[key] = total
-        return merged_dict
-
-    def sum_local_dictionaries(self, res):
-        merged = []
-        for i in range(len(res[0])):
-            lst = []
-            for j in range(len(res)):
-                lst.append(res[j][i])
-            merged.append(self.sum_local_dictionary(lst))
-        return merged
+    def merge_local_results(res: list) -> Union[Tuple, int, float, np.ndarray]:
+        i = 0
+        result = []
+        while True:
+            try:
+                result.append(
+                    reduce(
+                        merge.operators[res[0][i][1]],
+                        (
+                            np.array(r[i][0]) if isinstance(r[i][0], list) else r[i][0]
+                            for r in res
+                        ),
+                    )
+                )
+            except IndexError:
+                break
+            i += 1
+        if len(result) == 1:
+            return result[0]
+        else:
+            return tuple(result)
 
 
 class Worker(ABC):
@@ -64,6 +65,7 @@ class Worker(ABC):
         self.data = db.read_data(parameters)
 
     @Pyro4.expose
+    @merge.rules("add")
     def get_num_obs(self) -> int:
         return len(self.data)
 

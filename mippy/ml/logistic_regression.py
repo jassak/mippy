@@ -2,10 +2,11 @@ from typing import Tuple
 
 import Pyro4
 import numpy as np
+from scipy.special import expit, xlogy
 from addict import Dict
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
-from scipy.special import expit, xlogy
+import mippy.merge as merge
 
 __all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker", "properties"]
 
@@ -35,14 +36,12 @@ properties = Dict(
 
 class LogisticRegressionMaster(Master):
     def run(self):
-        n_feat = self.nodes[0].get_num_features()
-        n_obs = sum(self.nodes.get_num_obs())
+        n_feat = self.nodes.get_num_features()
+        n_obs = self.nodes.get_num_obs()
         coeff, loglike = self.init_model(n_feat, n_obs)
         while True:
             print(f"loss: {-loglike}")
-            res = self.nodes.get_loss_function(coeff)
-            loglike_new, grad, hess = self.sum_local_arrays(res)
-
+            loglike_new, grad, hess = self.nodes.get_loss_function(coeff)
             coeff = self.update_coefficients(grad, hess)
             if abs((loglike - loglike_new) / loglike) <= 1e-6:
                 break
@@ -66,10 +65,12 @@ class LogisticRegressionMaster(Master):
 
 class LogisticRegressionWorker(Worker):
     @Pyro4.expose
+    @merge.rules(None)
     def get_num_features(self) -> int:
         return len(self.params["columns"]["features"])
 
     @Pyro4.expose
+    @merge.rules("add", "add", "add")
     def get_loss_function(self, coeff: list) -> Tuple[float, list, list]:
         coeff = np.array(coeff)
         X = self.get_design_matrix(self.params.columns.features)

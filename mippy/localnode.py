@@ -41,15 +41,19 @@ class LocalNode:
         self, params: Mapping, task: str, method: str, *args, **kwargs
     ) -> Any:
         worker = self.get_worker(params, task)
-        try:
+        method = getattr(worker, method)
+        if isinstance(results := method(*args, **kwargs), tuple):
             results = tuple(
                 result.tolist() if isinstance(result, np.ndarray) else result
-                for result in getattr(worker, method)(*args, **kwargs)
+                for result in results
             )
-            return results
-        except TypeError:
-            result = getattr(worker, method)(*args, **kwargs)
-            return result.tolist() if isinstance(result, np.ndarray) else result
+        else:
+            results = (
+                results.tolist() if isinstance(results, np.ndarray) else results,
+            )
+        if len(results) != len(method.rules):
+            raise ValueError("Method rules should match the number of return values.")
+        return list(zip(results, method.rules))
 
     @Pyro4.expose
     def get_datasets(self) -> set:

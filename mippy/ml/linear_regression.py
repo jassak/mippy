@@ -6,6 +6,7 @@ from addict import Dict
 
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
+import mippy.merge as merge
 
 __all__ = ["LinearRegressionMaster", "LinearRegressionWorker"]
 
@@ -29,7 +30,7 @@ properties = Dict(
                     "types": ["numerical"],
                 },
             },
-            "datasets": ["adni"],
+            "datasets": ["adni", "ppmi", "edsd"],
             "filter": None,
         },
     }
@@ -38,8 +39,7 @@ properties = Dict(
 
 class LinearRegressionMaster(Master):
     def run(self):
-        res = self.nodes.get_gramian_and_moment_matrix()
-        gramian, moment_matrix = self.sum_local_arrays(res)
+        gramian, moment_matrix = self.nodes.get_gramian_and_moment_matrix()
         covariance = np.linalg.inv(gramian)
         coeff = covariance @ moment_matrix
         print("Done!\n")
@@ -48,6 +48,7 @@ class LinearRegressionMaster(Master):
 
 class LinearRegressionWorker(Worker):
     @Pyro4.expose
+    @merge.rules("add", "add")
     def get_gramian_and_moment_matrix(self) -> Tuple[list, list]:
         X = self.get_design_matrix(self.params.columns.features)
         y = self.get_design_matrix(self.params.columns.target, intercept=False)

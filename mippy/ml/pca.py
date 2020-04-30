@@ -3,6 +3,7 @@ import numpy as np
 from addict import Dict
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
+import mippy.merge as merge
 
 __all__ = ["PCAWorker", "PCAMaster"]
 
@@ -30,14 +31,10 @@ properties = Dict(
 
 class PCAMaster(Master):
     def run(self):
-        n_obs = sum(self.nodes.get_num_obs())
-        res = self.nodes.get_local_sums()
-        sx, sxx = self.sum_local_arrays(res)
-        sx, sxx = np.array(sx), np.array(sxx)
+        n_obs = self.nodes.get_num_obs()
+        sx, sxx = self.nodes.get_local_sums()
         means, sigmas = self.get_moments(n_obs, sx, sxx)
-        res = self.nodes.get_standardized_gramian(means, sigmas)
-        gramian = self.sum_local_arrays(res)
-        gramian = np.array(gramian)
+        gramian = self.nodes.get_standardized_gramian(means, sigmas)
         covariance = np.divide(gramian, n_obs - 1)
         eigenvalues, eigenvectors = np.linalg.eigh(covariance)
         idx = eigenvalues.argsort()[::-1]
@@ -57,6 +54,7 @@ class PCAMaster(Master):
 
 class PCAWorker(Worker):
     @Pyro4.expose
+    @merge.rules("add", "add")
     def get_local_sums(self):
         X = self.get_design_matrix(self.params.columns.variables, intercept=False)
         X = np.array(X)
@@ -65,6 +63,7 @@ class PCAWorker(Worker):
         return sx, sxx
 
     @Pyro4.expose
+    @merge.rules("add")
     def get_standardized_gramian(self, means, sigmas):
         means = np.array(means)
         sigmas = np.array(sigmas)

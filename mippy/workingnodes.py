@@ -1,11 +1,12 @@
 import operator
 from functools import partial, reduce
-from typing import List, Set
+from typing import List, Set, Union, Tuple
 
 import numpy as np
 import Pyro4
 from addict import Dict
 
+import mippy.merge as merge
 
 __all__ = ["WorkingNode", "WorkingNodes"]
 
@@ -71,7 +72,8 @@ class WorkingNodes:
             key: value.tolist() if isinstance(value, np.ndarray) else value
             for key, value in kwargs.items()
         }
-        return [getattr(node, method)(*args, **kwargs) for node in self]
+        result = [getattr(node, method)(*args, **kwargs) for node in self]
+        return self.merge_local_results(result)
 
     @property
     def datasets(self) -> set:
@@ -80,6 +82,29 @@ class WorkingNodes:
         else:
             self._datasets = reduce(operator.or_, (node.datasets for node in self))
             return self._datasets
+
+    @staticmethod
+    def merge_local_results(res: list) -> Union[Tuple, int, float, np.ndarray]:
+        i = 0
+        result = []
+        while True:
+            try:
+                result.append(
+                    reduce(
+                        merge.operators[res[0][i][1]],
+                        (
+                            np.array(r[i][0]) if isinstance(r[i][0], list) else r[i][0]
+                            for r in res
+                        ),
+                    )
+                )
+            except IndexError:
+                break
+            i += 1
+        if len(result) == 1:
+            return result[0]
+        else:
+            return tuple(result)
 
 
 def contains_any_dataset(node: WorkingNode, datasets: Set[str]):
