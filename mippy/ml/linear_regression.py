@@ -55,7 +55,7 @@ class LinearRegressionWorker(Worker):
 
         gramian = X.T @ X
         moment_matrix = X.T @ y
-        return gramian.tolist(), moment_matrix.tolist()
+        return gramian, moment_matrix
 
 
 if __name__ == "__main__":

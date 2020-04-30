@@ -67,6 +67,10 @@ class WorkingNodes:
         args = tuple(
             arg.tolist() if isinstance(arg, np.ndarray) else arg for arg in args
         )
+        kwargs = {
+            key: value.tolist() if isinstance(value, np.ndarray) else value
+            for key, value in kwargs.items()
+        }
         return [getattr(node, method)(*args, **kwargs) for node in self]
 
     @property

@@ -62,7 +62,7 @@ class PCAWorker(Worker):
         X = np.array(X)
         sx = X.sum(axis=0)
         sxx = (X ** 2).sum(axis=0)
-        return sx.tolist(), sxx.tolist()
+        return sx, sxx
 
     @Pyro4.expose
     def get_standardized_gramian(self, means, sigmas):
@@ -75,7 +75,7 @@ class PCAWorker(Worker):
         X -= means
         X /= sigmas
         gramian = np.dot(X.T, X)
-        return gramian.tolist()
+        return gramian
 
 
 if __name__ == "__main__":

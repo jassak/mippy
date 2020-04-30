@@ -1,5 +1,6 @@
 from typing import Mapping, Type, Any
 
+import numpy as np
 import Pyro4
 from addict import Dict
 from mippy.database import DataBase
@@ -40,7 +41,15 @@ class LocalNode:
         self, params: Mapping, task: str, method: str, *args, **kwargs
     ) -> Any:
         worker = self.get_worker(params, task)
-        return getattr(worker, method)(*args, **kwargs)
+        try:
+            results = tuple(
+                result.tolist() if isinstance(result, np.ndarray) else result
+                for result in getattr(worker, method)(*args, **kwargs)
+            )
+            return results
+        except TypeError:
+            result = getattr(worker, method)(*args, **kwargs)
+            return result.tolist() if isinstance(result, np.ndarray) else result
 
     @Pyro4.expose
     def get_datasets(self) -> set:

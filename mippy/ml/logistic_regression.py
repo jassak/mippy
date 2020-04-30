@@ -89,7 +89,7 @@ class LogisticRegressionWorker(Worker):
         grad = X.T @ D @ (z + y_ratio)
 
         loglike = float(np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s)))
-        return loglike, grad.tolist(), hess.tolist()
+        return loglike, grad, hess
 
 
 if __name__ == "__main__":
