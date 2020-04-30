@@ -4,7 +4,7 @@ import pprint
 
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
-import mippy.merge as merge
+import mippy.reduce as reduce
 
 __all__ = ["NaiveBayesWorker", "NaiveBayesMaster"]
 
@@ -51,7 +51,7 @@ class NaiveBayesMaster(Master):
 
 class NaiveBayesWorker(Worker):
     @Pyro4.expose
-    @merge.rules("add_dict", "add_dict")
+    @reduce.rules("add_dict", "add_dict")
     def get_counts(self):
         X = self.get_design_matrix(
             self.params.columns.features + self.params.columns.target, intercept=False

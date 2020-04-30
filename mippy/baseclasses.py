@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union
-from functools import reduce
+from typing import List
 
 import Pyro4
-import numpy as np
 import pandas as pd
 from addict import Dict
 from mippy import n_nodes
 from mippy.workingnodes import WorkingNodes
-import mippy.merge as merge
+import mippy.reduce as reduce
 
 __all__ = ["Master", "Worker"]
 
@@ -26,29 +24,6 @@ class Master(ABC):
     def run(self):
         """Main execution of algorithm. Should be implemented in child classes."""
 
-    @staticmethod
-    def merge_local_results(res: list) -> Union[Tuple, int, float, np.ndarray]:
-        i = 0
-        result = []
-        while True:
-            try:
-                result.append(
-                    reduce(
-                        merge.operators[res[0][i][1]],
-                        (
-                            np.array(r[i][0]) if isinstance(r[i][0], list) else r[i][0]
-                            for r in res
-                        ),
-                    )
-                )
-            except IndexError:
-                break
-            i += 1
-        if len(result) == 1:
-            return result[0]
-        else:
-            return tuple(result)
-
 
 class Worker(ABC):
     def __init__(self, idx: int):
@@ -65,7 +40,7 @@ class Worker(ABC):
         self.data = db.read_data(parameters)
 
     @Pyro4.expose
-    @merge.rules("add")
+    @reduce.rules("add")
     def get_num_obs(self) -> int:
         return len(self.data)
 

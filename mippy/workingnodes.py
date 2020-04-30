@@ -1,12 +1,12 @@
 import operator
-from functools import partial, reduce
+import functools
 from typing import List, Set, Union, Tuple
 
 import numpy as np
 import Pyro4
 from addict import Dict
 
-import mippy.merge as merge
+import mippy.reduce as reduce
 
 __all__ = ["WorkingNode", "WorkingNodes"]
 
@@ -20,7 +20,7 @@ class WorkingNode:
         self.task = params.task
 
     def __getattr__(self, method):
-        return partial(self._run, method)
+        return functools.partial(self._run, method)
 
     def _run(self, method: str, *args, **kwargs):
         return self._proxy.run_on_worker(
@@ -62,7 +62,7 @@ class WorkingNodes:
         return self._nodes[item]
 
     def __getattr__(self, method):
-        return partial(self._run, method)
+        return functools.partial(self._run, method)
 
     def _run(self, method: str, *args, **kwargs):
         args = tuple(
@@ -80,7 +80,9 @@ class WorkingNodes:
         if self._datasets:
             return self._datasets
         else:
-            self._datasets = reduce(operator.or_, (node.datasets for node in self))
+            self._datasets = functools.reduce(
+                operator.or_, (node.datasets for node in self)
+            )
             return self._datasets
 
     @staticmethod
@@ -90,8 +92,8 @@ class WorkingNodes:
         while True:
             try:
                 result.append(
-                    reduce(
-                        merge.operators[res[0][i][1]],
+                    functools.reduce(
+                        reduce.operators[res[0][i][1]],
                         (
                             np.array(r[i][0]) if isinstance(r[i][0], list) else r[i][0]
                             for r in res

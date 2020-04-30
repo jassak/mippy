@@ -6,7 +6,7 @@ from scipy.special import expit, xlogy
 from addict import Dict
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
-import mippy.merge as merge
+import mippy.reduce as reduce
 
 __all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker", "properties"]
 
@@ -65,12 +65,12 @@ class LogisticRegressionMaster(Master):
 
 class LogisticRegressionWorker(Worker):
     @Pyro4.expose
-    @merge.rules(None)
+    @reduce.rules(None)
     def get_num_features(self) -> int:
         return len(self.params["columns"]["features"])
 
     @Pyro4.expose
-    @merge.rules("add", "add", "add")
+    @reduce.rules("add", "add", "add")
     def get_loss_function(self, coeff: list) -> Tuple[float, list, list]:
         coeff = np.array(coeff)
         X = self.get_design_matrix(self.params.columns.features)

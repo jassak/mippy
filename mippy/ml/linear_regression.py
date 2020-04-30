@@ -6,7 +6,7 @@ from addict import Dict
 
 from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
-import mippy.merge as merge
+import mippy.reduce as reduce
 
 __all__ = ["LinearRegressionMaster", "LinearRegressionWorker"]
 
@@ -48,7 +48,7 @@ class LinearRegressionMaster(Master):
 
 class LinearRegressionWorker(Worker):
     @Pyro4.expose
-    @merge.rules("add", "add")
+    @reduce.rules("add", "add")
     def get_gramian_and_moment_matrix(self) -> Tuple[list, list]:
         X = self.get_design_matrix(self.params.columns.features)
         y = self.get_design_matrix(self.params.columns.target, intercept=False)
