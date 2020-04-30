@@ -1,7 +1,6 @@
-from typing import Mapping, Type
+from typing import Mapping, Type, Any
 
 import Pyro4
-import Pyro4.errors
 from addict import Dict
 from mippy.database import DataBase
 from mippy.baseclasses import Worker
@@ -37,12 +36,14 @@ class LocalNode:
         return worker
 
     @Pyro4.expose
-    def run_on_worker(self, params: Mapping, task: str, method: str, *args, **kwargs):
+    def run_on_worker(
+        self, params: Mapping, task: str, method: str, *args, **kwargs
+    ) -> Any:
         worker = self.get_worker(params, task)
         return getattr(worker, method)(*args, **kwargs)
 
     @Pyro4.expose
-    def get_datasets(self):
+    def get_datasets(self) -> set:
         return self.datasets
 
 

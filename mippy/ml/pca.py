@@ -35,7 +35,7 @@ class PCAMaster(Master):
         sx, sxx = self.sum_local_arrays(res)
         sx, sxx = np.array(sx), np.array(sxx)
         means, sigmas = self.get_moments(n_obs, sx, sxx)
-        res = self.nodes.get_standardized_gramian(means.tolist(), sigmas.tolist())
+        res = self.nodes.get_standardized_gramian(means, sigmas)
         gramian = self.sum_local_arrays(res)
         gramian = np.array(gramian)
         covariance = np.divide(gramian, n_obs - 1)

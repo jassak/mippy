@@ -40,7 +40,7 @@ class LogisticRegressionMaster(Master):
         coeff, loglike = self.init_model(n_feat, n_obs)
         while True:
             print(f"loss: {-loglike}")
-            res = self.nodes.get_loss_function(coeff.tolist())
+            res = self.nodes.get_loss_function(coeff)
             loglike_new, grad, hess = self.sum_local_arrays(res)
 
             coeff = self.update_coefficients(grad, hess)

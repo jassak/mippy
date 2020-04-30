@@ -2,6 +2,7 @@ import operator
 from functools import partial, reduce
 from typing import List, Set
 
+import numpy as np
 import Pyro4
 from addict import Dict
 
@@ -63,6 +64,9 @@ class WorkingNodes:
         return partial(self._run, method)
 
     def _run(self, method: str, *args, **kwargs):
+        args = tuple(
+            arg.tolist() if isinstance(arg, np.ndarray) else arg for arg in args
+        )
         return [getattr(node, method)(*args, **kwargs) for node in self]
 
     @property
