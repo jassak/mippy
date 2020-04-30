@@ -17,7 +17,7 @@ workers = {
     "logistic regression": LogisticRegressionWorker,
     "pca": PCAWorker,
     "naive bayes": NaiveBayesWorker,
-    "linear regression": LinearRegressionWorker
+    "linear regression": LinearRegressionWorker,
 }
 db_root = root / "dbs"
 

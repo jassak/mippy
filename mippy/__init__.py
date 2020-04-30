@@ -4,12 +4,12 @@ from pathlib import Path
 root = Path(__file__).parent.parent
 n_nodes = 3
 
-import mippy.baseclasses
-import mippy.database
-import mippy.exceptions
-import mippy.localnode
-import mippy.parameters
-import mippy.workingnodes
+from mippy.baseclasses import *
+from mippy.database import *
+from mippy.exceptions import *
+from mippy.localnode import *
+from mippy.parameters import *
+from mippy.workingnodes import *
 
 __all__ = ["root", "n_nodes"]
 __all__.extend(baseclasses.__all__)

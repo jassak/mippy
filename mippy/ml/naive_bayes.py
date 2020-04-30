@@ -45,7 +45,7 @@ class NaiveBayesMaster(Master):
             theta[key] = parameter
 
         pp = pprint.PrettyPrinter(indent=4)
-        print('\nDone!\n')
+        print("\nDone!\n")
         print("model parameres = \n")
         pp.pprint(theta)
 
