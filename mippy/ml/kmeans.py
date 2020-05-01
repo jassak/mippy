@@ -1,4 +1,4 @@
-import Pyro4
+import Pyro5.api
 import numpy as np
 from addict import Dict
 from mippy.baseclasses import Master, Worker
@@ -50,14 +50,14 @@ class KMeansMaster(Master):
 
 
 class KMeansWorker(Worker):
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules(None)
     def init_means(self, k: int):
         X = self.get_design_matrix(self.params.columns.features, intercept=False)
         X = np.array(X)
         return X[:k]
 
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("mediants")
     def update_means(self, means):
         k = len(means)

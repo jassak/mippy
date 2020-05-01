@@ -3,7 +3,7 @@ import functools
 from typing import List, Set
 
 import numpy as np
-import Pyro4
+import Pyro5.api
 from addict import Dict
 
 from mippy.reduce import operators
@@ -14,7 +14,7 @@ __all__ = ["WorkingNode", "WorkingNodes"]
 
 class WorkingNode:
     def __init__(self, name: str, params: Dict):
-        self._proxy = Pyro4.Proxy(f"PYRONAME:{name}")
+        self._proxy = Pyro5.api.Proxy(f"PYRONAME:{name}")
         self._datasets = None
         self.name = name
         self.params = params

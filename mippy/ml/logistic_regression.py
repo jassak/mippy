@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import Pyro4
+import Pyro5.api
 import numpy as np
 from scipy.special import expit, xlogy
 from addict import Dict
@@ -64,12 +64,12 @@ class LogisticRegressionMaster(Master):
 
 
 class LogisticRegressionWorker(Worker):
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules(None)
     def get_num_features(self) -> int:
         return len(self.params["columns"]["features"])
 
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("add", "add", "add")
     def get_loss_function(self, coeff: list) -> Tuple[float, list, list]:
         coeff = np.array(coeff)

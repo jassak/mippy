@@ -1,4 +1,4 @@
-import Pyro4
+import Pyro5.api
 import numpy as np
 from addict import Dict
 from mippy.baseclasses import Master, Worker
@@ -54,7 +54,7 @@ class PCAMaster(Master):
 
 
 class PCAWorker(Worker):
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("add", "add")
     def get_local_sums(self):
         X = self.get_design_matrix(self.params.columns.variables, intercept=False)
@@ -63,7 +63,7 @@ class PCAWorker(Worker):
         sxx = (X ** 2).sum(axis=0)
         return sx, sxx
 
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("add")
     def get_standardized_gramian(self, means, sigmas):
         means = np.array(means)

@@ -1,4 +1,4 @@
-import Pyro4
+import Pyro5.api
 from addict import Dict
 import pprint
 
@@ -50,7 +50,7 @@ class NaiveBayesMaster(Master):
 
 
 class NaiveBayesWorker(Worker):
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("add_dict", "add_dict")
     def get_counts(self):
         X = self.get_design_matrix(

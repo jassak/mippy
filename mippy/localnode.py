@@ -1,7 +1,8 @@
 from typing import Mapping, Type, Any
 
 import numpy as np
-import Pyro4
+import Pyro5.api
+import Pyro5.server
 from addict import Dict
 from mippy.database import DataBase
 from mippy.baseclasses import Worker
@@ -38,7 +39,7 @@ class LocalNode:
         worker.load_data(params, self.db)
         return worker
 
-    @Pyro4.expose
+    @Pyro5.api.expose
     def run_on_worker(
         self, params: Mapping, task: str, method: str, *args, **kwargs
     ) -> Any:
@@ -57,14 +58,14 @@ class LocalNode:
             raise ValueError("Method rules should match the number of return values.")
         return results
 
-    @Pyro4.expose
+    @Pyro5.api.expose
     def get_datasets(self) -> set:
         return self.datasets
 
 
 def start_server() -> None:
-    daemon = Pyro4.Daemon()
-    ns = Pyro4.locateNS()
+    daemon = Pyro5.api.Daemon()
+    ns = Pyro5.api.locate_ns()
     for i in range(n_nodes):
         ns.register(f"local_node{i}", daemon.register(LocalNode(i)))
     daemon.requestLoop()

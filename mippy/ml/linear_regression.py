@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import Pyro4
+import Pyro5.api
 import numpy as np
 from addict import Dict
 
@@ -47,7 +47,7 @@ class LinearRegressionMaster(Master):
 
 
 class LinearRegressionWorker(Worker):
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("add", "add")
     def get_gramian_and_moment_matrix(self) -> Tuple[list, list]:
         X = self.get_design_matrix(self.params.columns.features)

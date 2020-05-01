@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-import Pyro4
+import Pyro5.api
 import pandas as pd
 from addict import Dict
 from mippy import n_nodes
@@ -42,7 +42,7 @@ class Worker(ABC):
         self.params = parameters
         self.data = db.read_data(parameters)
 
-    @Pyro4.expose
+    @Pyro5.api.expose
     @reduce.rules("add")
     def get_num_obs(self) -> int:
         return len(self.data)
