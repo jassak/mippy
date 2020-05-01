@@ -27,13 +27,15 @@ Medical Informatics Platform in python
     ```bash
    pyro4-ns
    ```
-8. To run a machine learning algorithm we first need to initialize the local servers.
-    Currently there are three by default.
+8. To run a machine learning algorithm we first need to start the local servers.
+    Use predefined script for now.
     ```bash
-    python mippy/localnode.py
+    cd scripts
+    python start_servers.py
     ```
 9. In a separate shell activate venv again (see step 4.). Then run some algorithm like this
     ```bash
+    cd ..
     python mippy/ml/*some_algorithm.py*
     ```
     where you have to replace `*some_algorithm.py*` by the script you want to run.
