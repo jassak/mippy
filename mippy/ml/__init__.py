@@ -3,6 +3,7 @@ from mippy.ml.logistic_regression import *
 from mippy.ml.pca import *
 from mippy.ml.naive_bayes import *
 from mippy.ml.linear_regression import *
+from mippy.ml.kmeans import *
 
 from mippy.baseclasses import Worker
 
@@ -11,6 +12,7 @@ __all__.extend(logistic_regression.__all__)
 __all__.extend(pca.__all__)
 __all__.extend(naive_bayes.__all__)
 __all__.extend(linear_regression.__all__)
+__all__.extend(kmeans.__all__)
 
 
 def get_reduction_rules():

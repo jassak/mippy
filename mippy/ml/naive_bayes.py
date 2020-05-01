@@ -25,7 +25,7 @@ properties = Dict(
                 },
             },
             "alpha": {"value": 0.5, "required": True, "types": ["float"]},
-            "datasets": ["adni"],
+            "datasets": ["adni", "ppmi", "edsd"],
             "filter": None,
         },
     }

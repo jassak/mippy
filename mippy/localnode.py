@@ -10,6 +10,7 @@ from mippy.ml.logistic_regression import LogisticRegressionWorker
 from mippy.ml.pca import PCAWorker
 from mippy.ml.naive_bayes import NaiveBayesWorker
 from mippy.ml.linear_regression import LinearRegressionWorker
+from mippy.ml.kmeans import KMeansWorker
 
 __all__ = ["LocalNode", "start_server"]
 
@@ -18,6 +19,7 @@ workers = {
     "pca": PCAWorker,
     "naive bayes": NaiveBayesWorker,
     "linear regression": LinearRegressionWorker,
+    "kmeans": KMeansWorker,
 }
 db_root = root / "dbs"
 
