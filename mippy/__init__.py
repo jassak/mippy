@@ -1,16 +1,18 @@
-from pathlib import Path
+from .baseclasses import *
+from .database import *
+from .localnode import *
+from .parameters import *
+from .workingnodes import *
+from .ml import *
+from . import baseclasses
+from . import database
+from . import localnode
+from . import parameters
+from . import workingnodes
+from . import ml
 
-root = Path(__file__).parent.parent
-n_nodes = 3
 
-from mippy.baseclasses import *
-from mippy.database import *
-from mippy.localnode import *
-from mippy.parameters import *
-from mippy.workingnodes import *
-from mippy.ml import *
-
-__all__ = ["n_nodes", "root"]
+__all__ = []
 __all__.extend(baseclasses.__all__)
 __all__.extend(database.__all__)
 __all__.extend(localnode.__all__)

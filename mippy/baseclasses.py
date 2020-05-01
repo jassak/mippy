@@ -4,18 +4,20 @@ from typing import List, Optional
 import Pyro5.api
 import pandas as pd
 from addict import Dict
-from mippy import n_nodes
 from mippy.workingnodes import WorkingNodes
 import mippy.reduce as reduce
 
-__all__ = ["Master", "Worker"]
+__all__ = ["Master", "Worker", "node_names"]
+
+node_names = ["serverA", "serverB", "serverC"]
 
 
 class Master(ABC):
     def __init__(self, params: Dict) -> None:
+        global node_names
         cls = type(self).__name__
         self.nodes = WorkingNodes(
-            [f"local_node{i}" for i in range(n_nodes)], params, master=cls
+            [f"local-node.{name}" for name in node_names], params, master=cls
         )
         self.params = params
 
@@ -29,14 +31,14 @@ class Master(ABC):
 
 
 class Worker(ABC):
-    def __init__(self, idx: int) -> None:
-        self.idx = idx
+    def __init__(self, name: str) -> None:
+        self.name = name
         self.params: Optional[Dict] = None
         self.data: Optional[pd.DataFrame] = None
 
     def __repr__(self) -> str:
         cls = type(self).__name__
-        return f"{cls}({self.idx})"
+        return f"{cls}({self.name})"
 
     def load_data(self, parameters: Dict, db) -> None:
         self.params = parameters

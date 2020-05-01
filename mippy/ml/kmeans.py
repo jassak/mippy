@@ -41,12 +41,10 @@ class KMeansMaster(Master):
             means_new = self.nodes.update_means(means)
             means_new = [(means_new[i][0] / means_new[i][1]).tolist() for i in range(k)]
             print(means_new)
-            if (
-                max(np.linalg.norm(np.array(means) - np.array(means_new), axis=1))
-                < 1e-4
-            ):
+            if max_euclidean_distance(means, means_new) < 1e-6:
                 break
             means = means_new
+        print("\nDone!")
 
 
 class KMeansWorker(Worker):
@@ -70,6 +68,10 @@ class KMeansWorker(Worker):
         counts = [len(X[cluster_idx == i]) for i in range(k)]
         means = [Mean(s.tolist(), c) for s, c in zip(sums, counts)]
         return means
+
+
+def max_euclidean_distance(x, y):
+    return max(np.linalg.norm(np.array(x) - np.array(y), axis=1))
 
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ from sqlalchemy import or_, Table, select, create_engine, MetaData
 
 __all__ = ["DataBase"]
 
+root = Path(__file__).parent.parent
+
 
 class DataBase(object):
     def __init__(self, db_path: Path) -> None:

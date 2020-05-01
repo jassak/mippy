@@ -6,7 +6,7 @@ import Pyro5.server
 from addict import Dict
 from mippy.database import DataBase
 from mippy.baseclasses import Worker
-from mippy import n_nodes, root
+from mippy.database import root
 from mippy.ml.logistic_regression import LogisticRegressionWorker
 from mippy.ml.pca import PCAWorker
 from mippy.ml.naive_bayes import NaiveBayesWorker
@@ -26,16 +26,16 @@ db_root = root / "dbs"
 
 
 class LocalNode:
-    def __init__(self, idx: int):
-        self.idx = idx
-        print(f"Started server on node {idx}")
-        db_path = db_root / f"local_dataset{idx}.db"
+    def __init__(self, name: str):
+        self.name = name
+        print(f"Started server on node {name}")
+        db_path = db_root / f"dataset-{name}.db"
         self.db = DataBase(db_path=db_path)
         self.datasets = self.db.get_datasets()
 
     def get_worker(self, params: Mapping, task: str) -> Type[Worker]:
         params = Dict(params)
-        worker = workers[task](idx=self.idx)
+        worker = workers[task](name=self.name)
         worker.load_data(params, self.db)
         return worker
 
@@ -63,13 +63,17 @@ class LocalNode:
         return self.datasets
 
 
-def start_server() -> None:
+def start_server(name: str) -> None:
     daemon = Pyro5.api.Daemon()
     ns = Pyro5.api.locate_ns()
-    for i in range(n_nodes):
-        ns.register(f"local_node{i}", daemon.register(LocalNode(i)))
+    ns.register(f"local-node.{name}", daemon.register(LocalNode(name)))
     daemon.requestLoop()
 
 
 if __name__ == "__main__":
-    start_server()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--servername")
+    args = parser.parse_args()
+    start_server(args.servername)

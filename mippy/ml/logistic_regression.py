@@ -26,7 +26,7 @@ properties = Dict(
                     "types": ["numerical"],
                 },
             },
-            "datasets": ["adni", "ppmi", "edsd"],
+            "datasets": ["adni"],
             "filter": {"alzheimerbroadcategory": ["CN", "AD"]},
             "outcome": "AD",
         },
