@@ -4,11 +4,13 @@ from mippy.ml.pca import *
 from mippy.ml.naive_bayes import *
 from mippy.ml.linear_regression import *
 from mippy.ml.kmeans import *
+from mippy.ml.pearson import *
 from . import logistic_regression
 from . import pca
 from . import naive_bayes
 from . import linear_regression
 from . import kmeans
+from . import pearson
 
 from mippy.baseclasses import Worker
 
@@ -18,6 +20,7 @@ __all__.extend(pca.__all__)
 __all__.extend(naive_bayes.__all__)
 __all__.extend(linear_regression.__all__)
 __all__.extend(kmeans.__all__)
+__all__.extend(pearson.__all__)
 
 
 def get_reduction_rules():
