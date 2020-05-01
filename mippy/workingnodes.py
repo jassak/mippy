@@ -1,12 +1,13 @@
 import operator
 import functools
-from typing import List, Set, Union, Tuple
+from typing import List, Set
 
 import numpy as np
 import Pyro4
 from addict import Dict
 
-import mippy.reduce as reduce
+from mippy.reduce import operators
+
 
 __all__ = ["WorkingNode", "WorkingNodes"]
 
@@ -35,12 +36,9 @@ class WorkingNode:
             self._datasets = self._proxy.get_datasets()
             return self._datasets
 
-    def run_on_worker(self, method: str, *args, **kwargs):
-        return getattr(self._proxy.worker, method)(*args, **kwargs)
-
 
 class WorkingNodes:
-    def __init__(self, names: List[str], params: Dict):
+    def __init__(self, names: List[str], params: Dict, master: str):
         input_datasets = set(params.datasets)
         self._datasets = None
         self._nodes = [
@@ -51,6 +49,8 @@ class WorkingNodes:
         if missing := input_datasets - self.datasets:
             msg = f"Datasets '{missing}' cannot be found on any node."
             raise ValueError(msg)
+        self.master = master
+        self.worker = master.replace("Master", "Worker")
 
     def __len__(self):
         return len(self._nodes)
@@ -73,7 +73,11 @@ class WorkingNodes:
             for key, value in kwargs.items()
         }
         result = [getattr(node, method)(*args, **kwargs) for node in self]
-        return self.merge_local_results(result)
+        result = [
+            [np.array(n[i]) if isinstance(n[i], list) else n[i] for n in result]
+            for i in range(len(result[0]))
+        ]
+        return self.reduce(result, method)
 
     @property
     def datasets(self) -> set:
@@ -85,28 +89,16 @@ class WorkingNodes:
             )
             return self._datasets
 
-    @staticmethod
-    def merge_local_results(res: list) -> Union[Tuple, int, float, np.ndarray]:
-        i = 0
-        result = []
-        while True:
-            try:
-                result.append(
-                    functools.reduce(
-                        reduce.operators[res[0][i][1]],
-                        (
-                            np.array(r[i][0]) if isinstance(r[i][0], list) else r[i][0]
-                            for r in res
-                        ),
-                    )
-                )
-            except IndexError:
-                break
-            i += 1
-        if len(result) == 1:
-            return result[0]
-        else:
-            return tuple(result)
+    def reduce(self, result, method):
+        from mippy.ml import reduction_rules  # import here to avoid cyclic imports
+
+        rules = reduction_rules[self.worker][method]
+        merged = [
+            functools.reduce(operators[rule], res) for rule, res in zip(rules, result)
+        ]
+        if len(merged) == 1:
+            return merged[0]
+        return merged
 
 
 def contains_any_dataset(node: WorkingNode, datasets: Set[str]):

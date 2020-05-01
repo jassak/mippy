@@ -13,7 +13,10 @@ __all__ = ["Master", "Worker"]
 
 class Master(ABC):
     def __init__(self, params: Dict):
-        self.nodes = WorkingNodes([f"local_node{i}" for i in range(n_nodes)], params)
+        cls = type(self).__name__
+        self.nodes = WorkingNodes(
+            [f"local_node{i}" for i in range(n_nodes)], params, master=cls
+        )
         self.params = params
 
     def __repr__(self):

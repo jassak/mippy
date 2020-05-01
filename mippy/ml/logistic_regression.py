@@ -8,7 +8,7 @@ from mippy.baseclasses import Master, Worker
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
-__all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker", "properties"]
+__all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker"]
 
 properties = Dict(
     {

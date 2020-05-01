@@ -9,6 +9,7 @@ from mippy.database import *
 from mippy.localnode import *
 from mippy.parameters import *
 from mippy.workingnodes import *
+from mippy.ml import *
 
 __all__ = ["root", "n_nodes"]
 __all__.extend(baseclasses.__all__)

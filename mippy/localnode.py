@@ -53,7 +53,7 @@ class LocalNode:
             )
         if len(results) != len(method.rules):
             raise ValueError("Method rules should match the number of return values.")
-        return list(zip(results, method.rules))
+        return results
 
     @Pyro4.expose
     def get_datasets(self) -> set:
