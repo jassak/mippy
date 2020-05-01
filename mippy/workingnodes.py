@@ -1,6 +1,6 @@
 import operator
 import functools
-from typing import List, Set
+from typing import List, Set, Optional
 
 import numpy as np
 import Pyro5.api
@@ -15,7 +15,7 @@ __all__ = ["WorkingNode", "WorkingNodes"]
 class WorkingNode:
     def __init__(self, name: str, params: Dict):
         self._proxy = Pyro5.api.Proxy(f"PYRONAME:{name}")
-        self._datasets = None
+        self._datasets: Optional[Set[str]] = None
         self.name = name
         self.params = params
         self.task = params.task
@@ -29,12 +29,12 @@ class WorkingNode:
         )
 
     @property
-    def datasets(self) -> set:
+    def datasets(self) -> Set[str]:
         if self._datasets:
             return self._proxy.get_datasets()
         else:
             self._datasets = self._proxy.get_datasets()
-            return self._datasets
+            return self._datasets  # type: ignore  # mypy is confused somehow
 
 
 class WorkingNodes:
@@ -80,14 +80,14 @@ class WorkingNodes:
         return self.reduce(result, method)
 
     @property
-    def datasets(self) -> set:
+    def datasets(self) -> Set[str]:
         if self._datasets:
             return self._datasets
         else:
             self._datasets = functools.reduce(
                 operator.or_, (node.datasets for node in self)
             )
-            return self._datasets
+            return self._datasets  # type: ignore  # mypy is confused somehow
 
     def reduce(self, result, method):
         from mippy.ml import reduction_rules  # import here to avoid cyclic imports

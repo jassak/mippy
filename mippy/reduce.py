@@ -1,3 +1,5 @@
+from typing import Callable, Tuple, Any
+
 from collections import namedtuple
 import numpy as np
 
@@ -13,8 +15,8 @@ operators = {
 }
 
 
-def rules(*rules_tup):
-    def wrapper(method):
+def rules(*rules_tup: Tuple[str]) -> Callable:
+    def wrapper(method: Any) -> Any:
         method.rules = rules_tup
         return method
 

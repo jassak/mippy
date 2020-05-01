@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 root = Path(__file__).parent.parent
 n_nodes = 3
 
@@ -11,9 +10,10 @@ from mippy.parameters import *
 from mippy.workingnodes import *
 from mippy.ml import *
 
-__all__ = ["root", "n_nodes"]
+__all__ = ["n_nodes", "root"]
 __all__.extend(baseclasses.__all__)
 __all__.extend(database.__all__)
 __all__.extend(localnode.__all__)
 __all__.extend(parameters.__all__)
 __all__.extend(workingnodes.__all__)
+__all__.extend(ml.__all__)

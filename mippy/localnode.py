@@ -6,7 +6,7 @@ import Pyro5.server
 from addict import Dict
 from mippy.database import DataBase
 from mippy.baseclasses import Worker
-from mippy import root, n_nodes
+from mippy import n_nodes, root
 from mippy.ml.logistic_regression import LogisticRegressionWorker
 from mippy.ml.pca import PCAWorker
 from mippy.ml.naive_bayes import NaiveBayesWorker
@@ -41,7 +41,7 @@ class LocalNode:
 
     @Pyro5.api.expose
     def run_on_worker(
-        self, params: Mapping, task: str, method: str, *args, **kwargs
+        self, params: Mapping, task: str, method: Any, *args, **kwargs
     ) -> Any:
         worker = self.get_worker(params, task)
         method = getattr(worker, method)

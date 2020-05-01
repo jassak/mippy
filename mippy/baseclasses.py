@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 import Pyro5.api
 import pandas as pd
@@ -12,29 +12,29 @@ __all__ = ["Master", "Worker"]
 
 
 class Master(ABC):
-    def __init__(self, params: Dict):
+    def __init__(self, params: Dict) -> None:
         cls = type(self).__name__
         self.nodes = WorkingNodes(
             [f"local_node{i}" for i in range(n_nodes)], params, master=cls
         )
         self.params = params
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls = type(self).__name__
         return f"{cls}({self.params})"
 
     @abstractmethod
-    def run(self):
+    def run(self) -> None:
         """Main execution of algorithm. Should be implemented in child classes."""
 
 
 class Worker(ABC):
-    def __init__(self, idx: int):
+    def __init__(self, idx: int) -> None:
         self.idx = idx
-        self.params = None
-        self.data = None
+        self.params: Optional[Dict] = None
+        self.data: Optional[pd.DataFrame] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls = type(self).__name__
         return f"{cls}({self.idx})"
 
