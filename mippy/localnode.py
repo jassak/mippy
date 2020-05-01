@@ -4,24 +4,13 @@ import numpy as np
 import Pyro5.api
 import Pyro5.server
 from addict import Dict
-from mippy.database import DataBase
+
+from mippy.database import DataBase, root
 from mippy.baseclasses import Worker
-from mippy.database import root
-from mippy.ml.logistic_regression import LogisticRegressionWorker
-from mippy.ml.pca import PCAWorker
-from mippy.ml.naive_bayes import NaiveBayesWorker
-from mippy.ml.linear_regression import LinearRegressionWorker
-from mippy.ml.kmeans import KMeansWorker
 
 __all__ = ["LocalNode", "start_server"]
 
-workers = {
-    "logistic regression": LogisticRegressionWorker,
-    "pca": PCAWorker,
-    "naive bayes": NaiveBayesWorker,
-    "linear regression": LinearRegressionWorker,
-    "kmeans": KMeansWorker,
-}
+
 db_root = root / "dbs"
 
 
@@ -32,10 +21,11 @@ class LocalNode:
         db_path = db_root / f"dataset-{name}.db"
         self.db = DataBase(db_path=db_path)
         self.datasets = self.db.get_datasets()
+        self.workers = get_workers()
 
-    def get_worker(self, params: Mapping, task: str) -> Type[Worker]:
+    def get_worker(self, params: Mapping, name: str) -> Type[Worker]:
         params = Dict(params)
-        worker = workers[task](name=self.name)
+        worker = self.workers[name](name=self.name)
         worker.load_data(params, self.db)
         return worker
 
@@ -68,6 +58,13 @@ def start_server(name: str) -> None:
     ns = Pyro5.api.locate_ns()
     ns.register(f"local-node.{name}", daemon.register(LocalNode(name)))
     daemon.requestLoop()
+
+
+def get_workers():
+    import importlib
+
+    importlib.import_module(name="ml", package="mippy")
+    return {w.__name__: w for w in Worker.__subclasses__()}
 
 
 if __name__ == "__main__":

@@ -4,6 +4,11 @@ from mippy.ml.pca import *
 from mippy.ml.naive_bayes import *
 from mippy.ml.linear_regression import *
 from mippy.ml.kmeans import *
+from . import logistic_regression
+from . import pca
+from . import naive_bayes
+from . import linear_regression
+from . import kmeans
 
 from mippy.baseclasses import Worker
 

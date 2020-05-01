@@ -13,19 +13,19 @@ __all__ = ["WorkingNode", "WorkingNodes"]
 
 
 class WorkingNode:
-    def __init__(self, name: str, params: Dict):
+    def __init__(self, name: str, *, params: Dict, worker):
         self._proxy = Pyro5.api.Proxy(f"PYRONAME:{name}")
         self._datasets: Optional[Set[str]] = None
         self.name = name
         self.params = params
-        self.task = params.task
+        self.worker = worker
 
     def __getattr__(self, method):
         return functools.partial(self._run, method)
 
     def _run(self, method: str, *args, **kwargs):
         return self._proxy.run_on_worker(
-            self.params, self.task, method, *args, **kwargs
+            self.params, self.worker, method, *args, **kwargs
         )
 
     @property
@@ -41,16 +41,19 @@ class WorkingNodes:
     def __init__(self, names: List[str], params: Dict, master: str):
         input_datasets = set(params.datasets)
         self._datasets = None
+        self.master = master
+        self.worker = master.replace("Master", "Worker")
         self._nodes = [
             node
             for name in names
-            if contains_any_dataset(node := WorkingNode(name, params), input_datasets)
+            if contains_any_dataset(
+                node=(node := WorkingNode(name, params=params, worker=self.worker)),
+                datasets=input_datasets,
+            )
         ]
         if missing := input_datasets - self.datasets:
             msg = f"Datasets '{missing}' cannot be found on any node."
             raise ValueError(msg)
-        self.master = master
-        self.worker = master.replace("Master", "Worker")
 
     def __len__(self):
         return len(self._nodes)
@@ -101,7 +104,7 @@ class WorkingNodes:
         return merged
 
 
-def contains_any_dataset(node: WorkingNode, datasets: Set[str]):
+def contains_any_dataset(*, node: WorkingNode, datasets: Set[str]):
     if datasets == "all":
         return True
     return bool(node.datasets & datasets)

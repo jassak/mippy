@@ -21,7 +21,6 @@ def get_parameters(properties: Dict) -> Dict:
             parameters[name] = getattr(args, name).split(",")
         else:
             parameters[name] = param
-    parameters.task = properties.name
     return parameters
 
 

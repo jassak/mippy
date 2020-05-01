@@ -14,7 +14,7 @@ node_names = ["serverA", "serverB", "serverC"]
 
 class Master(ABC):
     def __init__(self, params: Dict) -> None:
-        global node_names
+        global node_names  # todo this should be a parameter
         cls = type(self).__name__
         self.nodes = WorkingNodes(
             [f"local-node.{name}" for name in node_names], params, master=cls
