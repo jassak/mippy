@@ -3,7 +3,8 @@ import numpy as np
 from addict import Dict
 from scipy import special
 
-from mippy.baseclasses import Master, Worker
+from mippy.worker import Worker
+from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
@@ -34,8 +35,8 @@ properties = Dict(
 
 class PearsonMaster(Master):
     def run(self):
-        n_obs = self.nodes.get_num_obs()
-        sx, sxx, sxy, sy, syy = self.nodes.get_local_sums()
+        n_obs = self.workers.get_num_obs()
+        sx, sxx, sxy, sy, syy = self.workers.get_local_sums()
         df = n_obs - 2
         d = (
             np.sqrt(n_obs * sxx - sx * sx)

@@ -1,10 +1,10 @@
 from addict import Dict
-from mippy.ml.logistic_regression import *
-from mippy.ml.pca import *
-from mippy.ml.naive_bayes import *
-from mippy.ml.linear_regression import *
-from mippy.ml.kmeans import *
-from mippy.ml.pearson import *
+from mippy.machinelearning.logistic_regression import *
+from mippy.machinelearning.pca import *
+from mippy.machinelearning.naive_bayes import *
+from mippy.machinelearning.linear_regression import *
+from mippy.machinelearning.kmeans import *
+from mippy.machinelearning.pearson import *
 from . import logistic_regression
 from . import pca
 from . import naive_bayes
@@ -12,7 +12,7 @@ from . import linear_regression
 from . import kmeans
 from . import pearson
 
-from mippy.baseclasses import Worker
+from mippy.worker import Worker
 
 __all__ = []
 __all__.extend(logistic_regression.__all__)

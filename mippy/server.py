@@ -6,18 +6,18 @@ import Pyro5.server
 from addict import Dict
 
 from mippy.database import DataBase, root
-from mippy.baseclasses import Worker
+from mippy.worker import Worker
 
-__all__ = ["LocalNode", "start_server"]
+__all__ = ["Server", "start_server"]
 
 
 db_root = root / "dbs"
 
 
-class LocalNode:
+class Server:
     def __init__(self, name: str):
         self.name = name
-        print(f"Started server on node {name}")
+        print(f"Starting server {name}")
         db_path = db_root / f"dataset-{name}.db"
         self.db = DataBase(db_path=db_path)
         self.datasets = self.db.get_datasets()
@@ -56,14 +56,14 @@ class LocalNode:
 def start_server(name: str) -> None:
     daemon = Pyro5.api.Daemon()
     ns = Pyro5.api.locate_ns()
-    ns.register(f"local-node.{name}", daemon.register(LocalNode(name)))
+    ns.register(f"local-server.{name}", daemon.register(Server(name)))
     daemon.requestLoop()
 
 
 def get_workers():
     import importlib
 
-    importlib.import_module(name="ml", package="mippy")
+    importlib.import_module(name="machinelearning", package="mippy")
     return {w.__name__: w for w in Worker.__subclasses__()}
 
 

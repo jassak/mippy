@@ -1,33 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import List, Optional
 
 import Pyro5.api
 import pandas as pd
 from addict import Dict
-from mippy.workingnodes import WorkingNodes
 import mippy.reduce as reduce
 
-__all__ = ["Master", "Worker", "node_names"]
-
-node_names = ["serverA", "serverB", "serverC"]
-
-
-class Master(ABC):
-    def __init__(self, params: Dict) -> None:
-        global node_names  # todo this should be a parameter
-        cls = type(self).__name__
-        self.nodes = WorkingNodes(
-            [f"local-node.{name}" for name in node_names], params, master=cls
-        )
-        self.params = params
-
-    def __repr__(self) -> str:
-        cls = type(self).__name__
-        return f"{cls}({self.params})"
-
-    @abstractmethod
-    def run(self) -> None:
-        """Main execution of algorithm. Should be implemented in child classes."""
+__all__ = ["Worker"]
 
 
 class Worker(ABC):

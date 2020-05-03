@@ -1,21 +1,21 @@
-from mippy.baseclasses import *
+from mippy.worker import *
 from mippy.database import *
-from mippy.localnode import *
+from mippy.server import *
 from mippy.parameters import *
-from mippy.workingnodes import *
-from mippy.ml import *
-from . import baseclasses
+from mippy.workerproxy import *
+from mippy.machinelearning import *
+from . import worker
 from . import database
-from . import localnode
+from . import server
 from . import parameters
-from . import workingnodes
-from . import ml
+from . import workerproxy
+from . import machinelearning
 
 
 __all__ = []
-__all__.extend(baseclasses.__all__)
+__all__.extend(worker.__all__)
 __all__.extend(database.__all__)
-__all__.extend(localnode.__all__)
+__all__.extend(server.__all__)
 __all__.extend(parameters.__all__)
-__all__.extend(workingnodes.__all__)
-__all__.extend(ml.__all__)
+__all__.extend(workerproxy.__all__)
+__all__.extend(machinelearning.__all__)

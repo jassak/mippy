@@ -9,23 +9,23 @@ from addict import Dict
 from mippy.reduce import operators
 
 
-__all__ = ["WorkingNode", "WorkingNodes"]
+__all__ = ["WorkerProxy", "WorkerPool"]
 
 
-class WorkingNode:
-    def __init__(self, name: str, *, params: Dict, worker):
-        self._proxy = Pyro5.api.Proxy(f"PYRONAME:{name}")
+class WorkerProxy:
+    def __init__(self, server_name: str, *, params: Dict, worker_kind: str):
+        self._proxy = Pyro5.api.Proxy(f"PYRONAME:{server_name}")
+        self.worker_kind = worker_kind
         self._datasets: Optional[Set[str]] = None
-        self.name = name
+        self.server_name = server_name
         self.params = params
-        self.worker = worker
 
     def __getattr__(self, method):
         return functools.partial(self._run, method)
 
     def _run(self, method: str, *args, **kwargs):
         return self._proxy.run_on_worker(
-            self.params, self.worker, method, *args, **kwargs
+            self.params, self.worker_kind, method, *args, **kwargs
         )
 
     @property
@@ -37,32 +37,33 @@ class WorkingNode:
             return self._datasets  # type: ignore  # mypy is confused somehow
 
 
-class WorkingNodes:
-    def __init__(self, names: List[str], params: Dict, master: str):
+class WorkerPool:
+    def __init__(self, server_names: List[str], params: Dict, master: str):
         input_datasets = set(params.datasets)
         self._datasets = None
-        self.master = master
-        self.worker = master.replace("Master", "Worker")
-        self._nodes = [
-            node
-            for name in names
+        self.worker_kind = master.replace("Master", "Worker")
+        self._workers = [
+            worker
+            for name in server_names
             if contains_any_dataset(
-                node=(node := WorkingNode(name, params=params, worker=self.worker)),
+                worker := WorkerProxy(
+                    name, params=params, worker_kind=self.worker_kind
+                ),
                 datasets=input_datasets,
             )
         ]
         if missing := input_datasets - self.datasets:
-            msg = f"Datasets '{missing}' cannot be found on any node."
+            msg = f"Dataset(s) '{missing}' cannot be found on any server."
             raise ValueError(msg)
 
     def __len__(self):
-        return len(self._nodes)
+        return len(self._workers)
 
     def __iter__(self):
-        return iter(self._nodes)
+        return iter(self._workers)
 
     def __getitem__(self, item):
-        return self._nodes[item]
+        return self._workers[item]
 
     def __getattr__(self, method):
         return functools.partial(self._run, method)
@@ -93,9 +94,9 @@ class WorkingNodes:
             return self._datasets  # type: ignore  # mypy is confused somehow
 
     def reduce(self, result, method):
-        from mippy.ml import reduction_rules  # import here to avoid cyclic imports
+        from mippy.machinelearning import reduction_rules
 
-        rules = reduction_rules[self.worker][method]
+        rules = reduction_rules[self.worker_kind][method]
         merged = [
             functools.reduce(operators[rule], res) for rule, res in zip(rules, result)
         ]
@@ -104,7 +105,7 @@ class WorkingNodes:
         return merged
 
 
-def contains_any_dataset(*, node: WorkingNode, datasets: Set[str]):
+def contains_any_dataset(worker: WorkerProxy, datasets: Set[str]):
     if datasets == "all":
         return True
-    return bool(node.datasets & datasets)
+    return bool(worker.datasets & datasets)

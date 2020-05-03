@@ -4,7 +4,8 @@ import Pyro5.api
 import numpy as np
 from scipy.special import expit, xlogy
 from addict import Dict
-from mippy.baseclasses import Master, Worker
+from mippy.worker import Worker
+from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
@@ -36,12 +37,12 @@ properties = Dict(
 
 class LogisticRegressionMaster(Master):
     def run(self):
-        n_feat = self.nodes.get_num_features()
-        n_obs = self.nodes.get_num_obs()
+        n_feat = self.workers.get_num_features()
+        n_obs = self.workers.get_num_obs()
         coeff, loglike = self.init_model(n_feat, n_obs)
         while True:
             print(f"loss: {-loglike}")
-            loglike_new, grad, hess = self.nodes.get_loss_function(coeff)
+            loglike_new, grad, hess = self.workers.get_loss_function(coeff)
             coeff = self.update_coefficients(grad, hess)
             if abs((loglike - loglike_new) / loglike) <= 1e-6:
                 break

@@ -2,7 +2,8 @@ import Pyro5.api
 from addict import Dict
 import pprint
 
-from mippy.baseclasses import Master, Worker
+from mippy.worker import Worker
+from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
@@ -35,7 +36,7 @@ properties = Dict(
 class NaiveBayesMaster(Master):
     def run(self):
         alpha = self.params.alpha.value
-        target_counts, pair_counts = self.nodes.get_counts()
+        target_counts, pair_counts = self.workers.get_counts()
         n_obs = sum(count for count in target_counts.values())
         theta = {}
         for key, count in pair_counts.items():

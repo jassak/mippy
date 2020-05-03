@@ -23,9 +23,9 @@ Medical Informatics Platform in python
     ```bash
     pip install -e .
    ```
-7. Run pyro4 name server
+7. Run pyro5 name server
     ```bash
-   pyro4-ns
+   pyro5-ns
    ```
 8. To run a machine learning algorithm we first need to start the local servers.
     Use predefined script for now.
@@ -36,12 +36,12 @@ Medical Informatics Platform in python
 9. In a separate shell activate venv again (see step 4.). Then run some algorithm like this
     ```bash
     cd ..
-    python mippy/ml/*some_algorithm.py*
+    python mippy/machinelearning/*some_algorithm.py*
     ```
     where you have to replace `*some_algorithm.py*` by the script you want to run.
     With no arguments, the algorithm runs with some default parameters. If you want to
     run it with your parameters pass them as arguments. To see the available arguments
     run
     ```bash
-    python mippy/ml/*some_algorithm.py* --help
+    python mippy/machinelearning/*some_algorithm.py* --help
     ```

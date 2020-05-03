@@ -1,7 +1,8 @@
 import Pyro5.api
 import numpy as np
 from addict import Dict
-from mippy.baseclasses import Master, Worker
+from mippy.worker import Worker
+from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
@@ -36,9 +37,9 @@ properties = Dict(
 class KMeansMaster(Master):
     def run(self):
         k = self.params.k
-        means = self.nodes.init_means(k)
+        means = self.workers.init_means(k)
         for _ in range(10):
-            means_new = self.nodes.update_means(means)
+            means_new = self.workers.update_means(means)
             means_new = [(means_new[i][0] / means_new[i][1]).tolist() for i in range(k)]
             print(means_new)
             if max_euclidean_distance(means, means_new) < 1e-6:

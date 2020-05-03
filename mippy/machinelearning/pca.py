@@ -1,7 +1,8 @@
 import Pyro5.api
 import numpy as np
 from addict import Dict
-from mippy.baseclasses import Master, Worker
+from mippy.worker import Worker
+from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
@@ -32,10 +33,10 @@ properties = Dict(
 
 class PCAMaster(Master):
     def run(self):
-        n_obs = self.nodes.get_num_obs()
-        sx, sxx = self.nodes.get_local_sums()
+        n_obs = self.workers.get_num_obs()
+        sx, sxx = self.workers.get_local_sums()
         means, sigmas = self.get_moments(n_obs, sx, sxx)
-        gramian = self.nodes.get_standardized_gramian(means, sigmas)
+        gramian = self.workers.get_standardized_gramian(means, sigmas)
         covariance = np.divide(gramian, n_obs - 1)
         eigenvalues, eigenvectors = np.linalg.eigh(covariance)
         idx = eigenvalues.argsort()[::-1]

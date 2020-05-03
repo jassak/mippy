@@ -4,7 +4,8 @@ import Pyro5.api
 import numpy as np
 from addict import Dict
 
-from mippy.baseclasses import Master, Worker
+from mippy.worker import Worker
+from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 
@@ -39,7 +40,7 @@ properties = Dict(
 
 class LinearRegressionMaster(Master):
     def run(self):
-        gramian, moment_matrix = self.nodes.get_gramian_and_moment_matrix()
+        gramian, moment_matrix = self.workers.get_gramian_and_moment_matrix()
         covariance = np.linalg.inv(gramian)
         coeff = covariance @ moment_matrix
         print("Done!\n")
