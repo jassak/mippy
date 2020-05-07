@@ -1,7 +1,9 @@
+import re
 from abc import ABC
 from typing import List, Optional
 
 import Pyro5.api
+import numpy as np
 import pandas as pd
 from addict import Dict
 import mippy.reduce as reduce
@@ -45,3 +47,17 @@ class Worker(ABC):
         outcome = target[0] + "_" + outcome
         y = y[outcome]
         return y
+
+    @Pyro5.api.expose
+    @reduce.rules("add")
+    def eval(self, expr, registry):
+        t = dict()
+        for key, columns in registry.items():
+            if "1" in columns:
+                columns.remove("1")
+                t[key] = np.array(self.get_design_matrix(columns, intercept=True))
+            else:
+                t[key] = np.array(self.get_design_matrix(columns, intercept=False))
+        expr = re.sub("(t_[0-9]+)", "t['\g<1>']", expr)
+        res = eval(expr)
+        return res.tolist()

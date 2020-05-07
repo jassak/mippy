@@ -1,13 +1,10 @@
-from typing import Tuple
-
-import Pyro5.api
 import numpy as np
 from addict import Dict
 
 from mippy.worker import Worker
 from master import Master
 from mippy.parameters import get_parameters
-import mippy.reduce as reduce
+from mippy.designmatrix import new_design_matrix
 
 __all__ = ["LinearRegressionMaster", "LinearRegressionWorker"]
 
@@ -40,24 +37,20 @@ properties = Dict(
 
 class LinearRegressionMaster(Master):
     def run(self):
-        gramian, moment_matrix = self.workers.get_gramian_and_moment_matrix()
-        covariance = np.linalg.inv(gramian)
-        coeff = covariance @ moment_matrix
+        X = new_design_matrix(
+            "1 leftententorhinalarea leftptplanumtemporale leftprgprecentralgyrus"
+        )
+        y = new_design_matrix("lefthippocampus")
+        G = self.workers.eval(X.T @ X)
+        M = self.workers.eval(X.T @ y)
+        covariance = np.linalg.inv(G)
+        coeff = covariance @ M
         print("Done!\n")
         print(f"model coefficients = \n{coeff}")
 
 
 class LinearRegressionWorker(Worker):
-    @Pyro5.api.expose
-    @reduce.rules("add", "add")
-    def get_gramian_and_moment_matrix(self) -> Tuple[list, list]:
-        X = self.get_design_matrix(self.params.columns.features)
-        y = self.get_design_matrix(self.params.columns.target, intercept=False)
-        X, y = np.array(X), np.array(y)
-
-        gramian = X.T @ X
-        moment_matrix = X.T @ y
-        return gramian, moment_matrix
+    pass
 
 
 if __name__ == "__main__":
