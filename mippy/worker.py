@@ -58,6 +58,9 @@ class Worker(ABC):
                 t[key] = np.array(self.get_design_matrix(columns, intercept=True))
             else:
                 t[key] = np.array(self.get_design_matrix(columns, intercept=False))
-        expr = re.sub("(t_[0-9]+)", "t['\g<1>']", expr)
+        expr = re.sub(r"(t_[0-9]+)", r"t['\g<1>']", expr)
         res = eval(expr)
-        return res.tolist()
+        if isinstance(res, np.ndarray):
+            return res.tolist()
+        else:
+            return res

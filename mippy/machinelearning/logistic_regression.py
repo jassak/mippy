@@ -8,6 +8,7 @@ from mippy.worker import Worker
 from master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
+from mippy.designmatrix import new_design_matrix
 
 __all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker"]
 
@@ -37,8 +38,10 @@ properties = Dict(
 
 class LogisticRegressionMaster(Master):
     def run(self):
-        n_feat = self.workers.get_num_features()
-        n_obs = self.workers.get_num_obs()
+        X = new_design_matrix("lefthippocampus")
+        n_feat = X.shape[1]
+        n_obs = self.workers.eval(X.len())
+        print(n_obs)
         coeff, loglike = self.init_model(n_feat, n_obs)
         while True:
             print(f"loss: {-loglike}")
