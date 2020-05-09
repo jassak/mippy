@@ -5,6 +5,7 @@ from typing import List, Optional
 import Pyro5.api
 import numpy as np
 import pandas as pd
+import scipy
 from addict import Dict
 import mippy.reduce as reduce
 
@@ -50,15 +51,22 @@ class Worker(ABC):
 
     @Pyro5.api.expose
     @reduce.rules("add")
-    def eval(self, expr, registry):
-        t = dict()
-        for key, columns in registry.items():
-            if "1" in columns:
-                columns.remove("1")
-                t[key] = np.array(self.get_design_matrix(columns, intercept=True))
+    def eval(self, expr, mocks, arrays):
+        m = dict()
+        for key, columns in mocks.items():
+            if len(columns) == 1:
+                m[key] = np.array(self.get_target_column(columns, "AD"))
             else:
-                t[key] = np.array(self.get_design_matrix(columns, intercept=False))
-        expr = re.sub(r"(t_[0-9]+)", r"t['\g<1>']", expr)
+                if "1" in columns:
+                    columns.remove("1")
+                    m[key] = np.array(self.get_design_matrix(columns, intercept=True))
+                else:
+                    m[key] = np.array(self.get_design_matrix(columns, intercept=False))
+        a = dict()
+        for key, value in arrays.items():
+            a[key] = np.array(value)
+        expr = re.sub(r"(m_[0-9]+)", r"m['\g<1>']", expr)
+        expr = re.sub(r"(a_[0-9]+)", r"a['\g<1>']", expr)
         res = eval(expr)
         if isinstance(res, np.ndarray):
             return res.tolist()

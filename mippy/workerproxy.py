@@ -94,7 +94,7 @@ class WorkerPool:
             return self._datasets  # type: ignore  # mypy is confused somehow
 
     def eval(self, expr):
-        return self._run("eval", str(expr), expr.registry)
+        return self._run("eval", str(expr), expr.mocks, expr.arrays)
 
     def reduce(self, result, method):
         from mippy.machinelearning import reduction_rules

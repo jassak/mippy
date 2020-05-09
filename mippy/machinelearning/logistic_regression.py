@@ -1,14 +1,17 @@
-from typing import Tuple
-
-import Pyro5.api
 import numpy as np
-from scipy.special import expit, xlogy
 from addict import Dict
+
 from mippy.worker import Worker
 from master import Master
 from mippy.parameters import get_parameters
-import mippy.reduce as reduce
-from mippy.designmatrix import new_design_matrix
+from mippy.expressions import (
+    new_design_matrix,
+    new_numpy_array,
+    expit,
+    diag,
+    sum_,
+    xlogy,
+)
 
 __all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker"]
 
@@ -38,63 +41,36 @@ properties = Dict(
 
 class LogisticRegressionMaster(Master):
     def run(self):
-        X = new_design_matrix("lefthippocampus")
+        X = new_design_matrix("1 lefthippocampus")
+        y = new_design_matrix("alzheimerbroadcategory")
         n_feat = X.shape[1]
         n_obs = self.workers.eval(X.len())
-        print(n_obs)
-        coeff, loglike = self.init_model(n_feat, n_obs)
+        loglike = -2 * n_obs * np.log(2)
+        coeff = new_numpy_array(np.zeros(n_feat))
         while True:
             print(f"loss: {-loglike}")
-            loglike_new, grad, hess = self.workers.get_loss_function(coeff)
-            coeff = self.update_coefficients(grad, hess)
+            z = X @ coeff
+            s = expit(z)
+            d = s * (1 - s)
+            D = diag(d)
+            loglike_new = self.workers.eval(sum_(xlogy(y, s) + xlogy(1 - y, 1 - s)))
+            hess = self.workers.eval(X.T @ D @ X)
+            y_ratio = (y - s) / d
+            grad = self.workers.eval(X.T @ D @ (z + y_ratio))
+            covariance = np.linalg.inv(hess)
+            coeff = covariance @ grad
+            coeff = new_numpy_array(coeff)
             if abs((loglike - loglike_new) / loglike) <= 1e-6:
                 break
             loglike = loglike_new
+
         print("\nDone!\n")
         print(f"loss = {-loglike}\n")
-        print(f"model coefficients = \n{coeff}\n")
-
-    @staticmethod
-    def init_model(n_feat: int, n_obs: int) -> Tuple[np.ndarray, float]:
-        ll = -2 * n_obs * np.log(2)
-        coeff = np.zeros(n_feat + 1)
-        return coeff, ll
-
-    @staticmethod
-    def update_coefficients(grad: np.ndarray, hess: np.ndarray) -> np.ndarray:
-        covariance = np.linalg.inv(hess)
-        coeff = covariance @ grad
-        return coeff
+        print(f"model coefficients = \n{coeff.array}\n")
 
 
 class LogisticRegressionWorker(Worker):
-    @Pyro5.api.expose
-    @reduce.rules(None)
-    def get_num_features(self) -> int:
-        return len(self.params["columns"]["features"])
-
-    @Pyro5.api.expose
-    @reduce.rules("add", "add", "add")
-    def get_loss_function(self, coeff: list) -> Tuple[float, list, list]:
-        coeff = np.array(coeff)
-        X = self.get_design_matrix(self.params.columns.features)
-        y = self.get_target_column(self.params.columns.target, self.params.outcome)
-        X, y = np.array(X), np.array(y)
-
-        z = X @ coeff
-        s = expit(z)
-        d = s * (1 - s)
-        D = np.diag(d)
-
-        hess = X.T @ D @ X
-        y_ratio = (y - s) / d
-        y_ratio[(y == 0) & (s == 0)] = -1
-        y_ratio[(y == 1) & (s == 1)] = 1
-
-        grad = X.T @ D @ (z + y_ratio)
-
-        loglike = float(np.sum(xlogy(y, s) + xlogy(1 - y, 1 - s)))
-        return loglike, grad, hess
+    pass
 
 
 if __name__ == "__main__":
@@ -102,7 +78,7 @@ if __name__ == "__main__":
 
     import time
 
-    s = time.perf_counter()
+    start = time.perf_counter()
     LogisticRegressionMaster(parameters).run()
-    elapsed = time.perf_counter() - s
+    elapsed = time.perf_counter() - start
     print(f"\nExecuted in {elapsed:0.3f} seconds.")

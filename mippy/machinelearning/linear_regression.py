@@ -4,7 +4,7 @@ from addict import Dict
 from mippy.worker import Worker
 from master import Master
 from mippy.parameters import get_parameters
-from mippy.designmatrix import new_design_matrix
+from mippy.expressions import new_design_matrix
 
 __all__ = ["LinearRegressionMaster", "LinearRegressionWorker"]
 
