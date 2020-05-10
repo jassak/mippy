@@ -41,8 +41,8 @@ class LinearRegressionMaster(Master):
             "1 leftententorhinalarea leftptplanumtemporale leftprgprecentralgyrus"
         )
         y = new_design_matrix("lefthippocampus")
-        G = self.workers.eval(X.T @ X)
-        M = self.workers.eval(X.T @ y)
+        G = self.workers.eval(X.T @ X).sum()
+        M = self.workers.eval(X.T @ y).sum()
         covariance = np.linalg.inv(G)
         coeff = covariance @ M
         print("Done!\n")

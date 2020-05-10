@@ -37,6 +37,9 @@ class Scalar(Mock):
     def __init__(self, expr):
         super().__init__()
         self.expr = expr
+        self.name = expr
+        self.shape = (1,)
+        self.tree = Terminal(self.name, self.shape)
 
 
 class Matrix(Mock):
@@ -71,11 +74,10 @@ class Matrix(Mock):
         mat = Matrix(shape=self.shape)
         if isinstance(other, Matrix):
             assert self.shape == other.shape
-            mat.expr = f"({self.expr} + {other.expr})"
-            mat.tree = BinaryOp("ADD", [self.tree, other.tree], mat.shape)
         elif isinstance(other, Number):
-            mat.expr = f"({self.expr} + {other})"
-            mat.tree = BinaryOp("ADD", [self.tree, str(other)], mat.shape)
+            other = Scalar(str(other))
+        mat.expr = f"({self.expr} + {other.expr})"
+        mat.tree = BinaryOp("ADD", [self.tree, other.tree], mat.shape)
         return mat
 
     def __radd__(self, other):
@@ -83,11 +85,10 @@ class Matrix(Mock):
         mat = Matrix(shape=self.shape)
         if isinstance(other, Matrix):
             assert self.shape == other.shape
-            mat.expr = f"({other.expr} + {self.expr})"
-            mat.tree = BinaryOp("ADD", [other.tree, self.tree], mat.shape)
         elif isinstance(other, Number):
-            mat.expr = f"({other} + {self.expr})"
-            mat.tree = BinaryOp("ADD", [str(other), self.tree], mat.shape)
+            other = Scalar(str(other))
+        mat.expr = f"({other.expr} + {self.expr})"
+        mat.tree = BinaryOp("ADD", [other.tree, self.tree], mat.shape)
         return mat
 
     def __mul__(self, other):
@@ -115,11 +116,10 @@ class Matrix(Mock):
         mat = Matrix(shape=self.shape)
         if isinstance(other, Matrix):
             assert self.shape == other.shape
-            mat.expr = f"({self.expr} - {other.expr})"
-            mat.tree = BinaryOp("SUB", [other.tree, self.tree], mat.shape)
         elif isinstance(other, Number):
-            mat.expr = f"({self.expr} - {other})"
-            mat.tree = BinaryOp("SUB", [str(other), self.tree], mat.shape)
+            other = Scalar(str(other))
+        mat.expr = f"({self.expr} - {other.expr})"
+        mat.tree = BinaryOp("SUB", [other.tree, self.tree], mat.shape)
         return mat
 
     def __rsub__(self, other):
@@ -127,11 +127,10 @@ class Matrix(Mock):
         mat = Matrix(shape=self.shape)
         if isinstance(other, Matrix):
             assert self.shape == other.shape
-            mat.expr = f"({other.expr} - {self.expr})"
-            mat.tree = BinaryOp("SUB", [other.tree, self.tree], mat.shape)
         elif isinstance(other, Number):
-            mat.expr = f"({other} - {self.expr})"
-            mat.tree = BinaryOp("SUB", [str(other), self.tree], mat.shape)
+            other = Scalar(str(other))
+        mat.expr = f"({other.expr} - {self.expr})"
+        mat.tree = BinaryOp("SUB", [other.tree, self.tree], mat.shape)
         return mat
 
     def len(self):
@@ -180,27 +179,29 @@ def new_array_name():
 def inv(mat):
     shape = mat.shape
     expr = mat.expr
+    tree = mat.tree
     mat = Matrix(shape=shape)
     mat.expr = f"inv({expr})"
-    mat.tree = UnaryOp("INV", mat.tree, mat.shape)
+    mat.tree = UnaryOp("INV", tree, mat.shape)
     return mat
 
 
 def sum_(mat):
-    shape = mat.shape
     expr = mat.expr
-    mat = Matrix(shape=shape)
+    tree = mat.tree
+    mat = Scalar(expr=expr)
     mat.expr = f"np.sum({expr})"
-    mat.tree = UnaryOp("SUM", mat.tree, mat.shape)
+    mat.tree = UnaryOp("SUM", tree, mat.shape)
     return mat
 
 
 def expit(mat):
     shape = mat.shape
     expr = mat.expr
+    tree = mat.tree
     mat = Matrix(shape=shape)
     mat.expr = f"scipy.special.expit({expr})"
-    mat.tree = UnaryOp("EXPIT", mat.tree, mat.shape)
+    mat.tree = UnaryOp("EXPIT", tree, mat.shape)
     return mat
 
 
@@ -209,9 +210,11 @@ def xlogy(mat_1, mat_2):
     shape = mat_1.shape
     expr_1 = mat_1.expr
     expr_2 = mat_2.expr
+    tree_1 = mat_1.tree
+    tree_2 = mat_2.tree
     mat = Matrix(shape=shape)
     mat.expr = f"scipy.special.xlogy({expr_1}, {expr_2})"
-    mat.tree = BinaryOp("SUB", [mat_1.tree, mat_2.tree], mat.shape)
+    mat.tree = BinaryOp("SUB", [tree_1, tree_2], mat.shape)
     return mat
 
 
@@ -219,14 +222,15 @@ def diag(mat):
     shape = mat.shape
     assert len(shape) == 1, f"diag expects order-1 tensor, order-{len(shape)} was given"
     expr = mat.expr
+    tree = mat.tree
     mat = Matrix(shape=(shape[0], shape[0]))
     mat.expr = f"np.diag({expr})"
-    mat.tree = UnaryOp("DIAG", mat.tree, mat.shape)
+    mat.tree = UnaryOp("DIAG", tree, mat.shape)
     return mat
 
 
 class DesignMatrix(Matrix):
-    def __init__(self, varnames):
+    def __init__(self, varnames, target_outcome):
         n_feat = len(varnames.split(" "))
         if n_feat == 1:
             shape = (NumberObs(),)
@@ -235,11 +239,14 @@ class DesignMatrix(Matrix):
         name = new_mock_name()
         super().__init__(shape, name)
         self.varnames = varnames.split(" ")
-        mock_registry[name] = self.varnames
+        mock_registry[name] = {
+            "varnames": self.varnames,
+            "target_outcome": target_outcome,
+        }
 
 
-def new_design_matrix(varnames):
-    return DesignMatrix(varnames)
+def new_design_matrix(varnames, target_outcome=None):
+    return DesignMatrix(varnames, target_outcome)
 
 
 class Node(ABC):

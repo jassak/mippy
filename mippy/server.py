@@ -1,6 +1,5 @@
-from typing import Mapping, Type, Any
+from typing import Mapping, Any
 
-import numpy as np
 import Pyro5.api
 import Pyro5.server
 from addict import Dict
@@ -21,32 +20,17 @@ class Server:
         db_path = db_root / f"dataset-{name}.db"
         self.db = DataBase(db_path=db_path)
         self.datasets = self.db.get_datasets()
-        self.workers = get_workers()
 
-    def get_worker(self, params: Mapping, name: str) -> Type[Worker]:
+    def get_worker(self, params: Mapping) -> Worker:
         params = Dict(params)
-        worker = self.workers[name](name=self.name)
+        worker = Worker(name=self.name)
         worker.load_data(params, self.db)
         return worker
 
     @Pyro5.api.expose
-    def run_on_worker(
-        self, params: Mapping, task: str, method: Any, *args, **kwargs
-    ) -> Any:
-        worker = self.get_worker(params, task)
-        method = getattr(worker, method)
-        if isinstance(results := method(*args, **kwargs), tuple):
-            results = tuple(
-                result.tolist() if isinstance(result, np.ndarray) else result
-                for result in results
-            )
-        else:
-            results = (
-                results.tolist() if isinstance(results, np.ndarray) else results,
-            )
-        if len(results) != len(method.rules):
-            raise ValueError("Method rules should match the number of return values.")
-        return results
+    def run_on_worker(self, params: Mapping, method: Any, *args, **kwargs) -> Any:
+        worker = self.get_worker(params)
+        return getattr(worker, method)(*args, **kwargs)
 
     @Pyro5.api.expose
     def get_datasets(self) -> set:
@@ -58,13 +42,6 @@ def start_server(name: str) -> None:
     ns = Pyro5.api.locate_ns()
     ns.register(f"local-server.{name}", daemon.register(Server(name)))
     daemon.requestLoop()
-
-
-def get_workers():
-    import importlib
-
-    importlib.import_module(name="machinelearning", package="mippy")
-    return {w.__name__: w for w in Worker.__subclasses__()}
 
 
 if __name__ == "__main__":

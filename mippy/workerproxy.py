@@ -6,26 +6,22 @@ import numpy as np
 import Pyro5.api
 from addict import Dict
 
-from mippy.reduce import operators
+# from mippy.reduce import operators
 
 
 __all__ = ["WorkerProxy", "WorkerPool"]
 
 
 class WorkerProxy:
-    def __init__(self, server_name: str, *, params: Dict, worker_kind: str):
+    def __init__(self, server_name: str, *, params: Dict):
         self._proxy = Pyro5.api.Proxy(f"PYRONAME:{server_name}")
-        self.worker_kind = worker_kind
         self._datasets: Optional[Set[str]] = None
         self.server_name = server_name
         self.params = params
 
-    def __getattr__(self, method):
-        return functools.partial(self._run, method)
-
-    def _run(self, method: str, *args, **kwargs):
+    def eval(self, expr):
         return self._proxy.run_on_worker(
-            self.params, self.worker_kind, method, *args, **kwargs
+            self.params, "eval", str(expr), expr.mocks, expr.arrays
         )
 
     @property
@@ -46,10 +42,7 @@ class WorkerPool:
             worker
             for name in server_names
             if contains_any_dataset(
-                worker := WorkerProxy(
-                    name, params=params, worker_kind=self.worker_kind
-                ),
-                datasets=input_datasets,
+                worker := WorkerProxy(name, params=params), datasets=input_datasets,
             )
         ]
         if missing := input_datasets - self.datasets:
@@ -65,23 +58,10 @@ class WorkerPool:
     def __getitem__(self, item):
         return self._workers[item]
 
-    def __getattr__(self, method):
-        return functools.partial(self._run, method)
-
-    def _run(self, method: str, *args, **kwargs):
-        args = tuple(
-            arg.tolist() if isinstance(arg, np.ndarray) else arg for arg in args
-        )
-        kwargs = {
-            key: value.tolist() if isinstance(value, np.ndarray) else value
-            for key, value in kwargs.items()
-        }
-        result = [getattr(node, method)(*args, **kwargs) for node in self]
-        result = [
-            [np.array(n[i]) if isinstance(n[i], list) else n[i] for n in result]
-            for i in range(len(result[0]))
-        ]
-        return self.reduce(result, method)
+    def eval(self, expr):
+        result = [node.eval(expr) for node in self]
+        result = [np.array(r) if isinstance(r, list) else r for r in result]
+        return WorkersResult(result)
 
     @property
     def datasets(self) -> Set[str]:
@@ -93,19 +73,34 @@ class WorkerPool:
             )
             return self._datasets  # type: ignore  # mypy is confused somehow
 
-    def eval(self, expr):
-        return self._run("eval", str(expr), expr.mocks, expr.arrays)
 
-    def reduce(self, result, method):
-        from mippy.machinelearning import reduction_rules
+class WorkersResult:
+    def __init__(self, results):
+        self._results = results
 
-        rules = reduction_rules[self.worker_kind][method]
-        merged = [
-            functools.reduce(operators[rule], res) for rule, res in zip(rules, result)
-        ]
-        if len(merged) == 1:
-            return merged[0]
-        return merged
+    def __repr__(self):
+        return repr(self._results)
+
+    def __getitem__(self, item):
+        return self._results[item]
+
+    def __len__(self):
+        return len(self._results)
+
+    def __iter__(self):
+        return iter(self._results)
+
+    def sum(self):
+        return sum(self._results)
+
+    def max(self):
+        return max(self._results)
+
+    def min(self):
+        return min(self._results)
+
+    def reduce(self, op):
+        return functools.reduce(op, self._results)
 
 
 def contains_any_dataset(worker: WorkerProxy, datasets: Set[str]):

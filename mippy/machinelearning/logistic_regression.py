@@ -1,7 +1,6 @@
 import numpy as np
 from addict import Dict
 
-from mippy.worker import Worker
 from master import Master
 from mippy.parameters import get_parameters
 from mippy.expressions import (
@@ -13,7 +12,7 @@ from mippy.expressions import (
     xlogy,
 )
 
-__all__ = ["LogisticRegressionMaster", "LogisticRegressionWorker"]
+__all__ = ["LogisticRegressionMaster"]
 
 properties = Dict(
     {
@@ -42,9 +41,9 @@ properties = Dict(
 class LogisticRegressionMaster(Master):
     def run(self):
         X = new_design_matrix("1 lefthippocampus")
-        y = new_design_matrix("alzheimerbroadcategory")
+        y = new_design_matrix("alzheimerbroadcategory", target_outcome="AD")
         n_feat = X.shape[1]
-        n_obs = self.workers.eval(X.len())
+        n_obs = self.workers.eval(X.len()).sum()
         loglike = -2 * n_obs * np.log(2)
         coeff = new_numpy_array(np.zeros(n_feat))
         while True:
@@ -53,10 +52,11 @@ class LogisticRegressionMaster(Master):
             s = expit(z)
             d = s * (1 - s)
             D = diag(d)
-            loglike_new = self.workers.eval(sum_(xlogy(y, s) + xlogy(1 - y, 1 - s)))
-            hess = self.workers.eval(X.T @ D @ X)
+            loglike_new = sum_(xlogy(y, s) + xlogy(1 - y, 1 - s))
+            loglike_new = self.workers.eval(loglike_new).sum()
+            hess = self.workers.eval(X.T @ D @ X).sum()
             y_ratio = (y - s) / d
-            grad = self.workers.eval(X.T @ D @ (z + y_ratio))
+            grad = self.workers.eval(X.T @ D @ (z + y_ratio)).sum()
             covariance = np.linalg.inv(hess)
             coeff = covariance @ grad
             coeff = new_numpy_array(coeff)
@@ -67,10 +67,6 @@ class LogisticRegressionMaster(Master):
         print("\nDone!\n")
         print(f"loss = {-loglike}\n")
         print(f"model coefficients = \n{coeff.array}\n")
-
-
-class LogisticRegressionWorker(Worker):
-    pass
 
 
 if __name__ == "__main__":
