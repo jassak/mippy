@@ -1,7 +1,7 @@
 import numpy as np
 from addict import Dict
 
-from master import Master
+from mippy.master import Master
 from mippy.parameters import get_parameters
 from mippy.expressions import (
     new_design_matrix,

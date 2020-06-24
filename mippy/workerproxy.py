@@ -19,6 +19,9 @@ class WorkerProxy:
         self.server_name = server_name
         self.params = params
 
+    def __repr__(self):
+        return f"WorkerProxy({self.server_name})"
+
     def eval(self, expr):
         return self._proxy.run_on_worker(
             self.params, "eval", str(expr), expr.mocks, expr.arrays
@@ -57,6 +60,9 @@ class WorkerPool:
 
     def __getitem__(self, item):
         return self._workers[item]
+
+    def __repr__(self):
+        return f"[{', '.join([repr(w) for w in self._workers])}]"
 
     def eval(self, expr):
         result = [node.eval(expr) for node in self]

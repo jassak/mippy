@@ -3,7 +3,7 @@ from addict import Dict
 import pprint
 
 from mippy.worker import Worker
-from master import Master
+from mippy.master import Master
 from mippy.parameters import get_parameters
 import mippy.reduce as reduce
 

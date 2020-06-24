@@ -5,7 +5,15 @@ from numbers import Number
 import numpy as np
 
 
-__all__ = ["new_design_matrix", "new_numpy_array", "expit", "diag", "sum_", "xlogy"]
+__all__ = [
+    "new_design_matrix",
+    "new_numpy_array",
+    "expit",
+    "diag",
+    "sum_",
+    "xlogy",
+    "inv",
+]
 
 GOOD = "👍"
 BAD = "👎"
@@ -31,6 +39,10 @@ class Mock:
     @property
     def code(self):
         return self.tree.code
+
+    @property
+    def code_with_privacy(self):
+        return self.tree.code_with_privacy
 
 
 class Scalar(Mock):
@@ -61,7 +73,7 @@ class Matrix(Mock):
         return mat
 
     def __matmul__(self, other):
-        assert self.shape[1] == other.shape[0]
+        assert self.shape[1] == other.shape[0], "Matrix dimensions do not agree"
         shape = self.shape[:-1] + other.shape[1:]
         mat = Matrix(shape=shape)
         mat.expr = f"({self.expr} @ {other.expr})"
@@ -284,6 +296,10 @@ class Terminal(Node):
 
     @property
     def code(self):
+        return [f"LOAD {self.name}"]
+
+    @property
+    def code_with_privacy(self):
         privacy = is_privacy_compliant(self.shape)
         return [f"LOAD {self.name} -> {self.shape}, privacy:{privacy}"]
 
@@ -297,8 +313,14 @@ class UnaryOp(Node):
 
     @property
     def code(self):
+        return self.children.code + [f"{self.name}"]
+
+    @property
+    def code_with_privacy(self):
         privacy = is_privacy_compliant(self.shape)
-        return self.children.code + [f"{self.name} -> {self.shape}, privacy:{privacy}"]
+        return self.children.code_with_privacy + [
+            f"{self.name} -> {self.shape}, privacy:{privacy}"
+        ]
 
 
 class BinaryOp(Node):
@@ -310,7 +332,11 @@ class BinaryOp(Node):
 
     @property
     def code(self):
+        return sum([c.code for c in self.children], []) + [f"{self.name}"]
+
+    @property
+    def code_with_privacy(self):
         privacy = is_privacy_compliant(self.shape)
-        return sum([c.code for c in self.children], []) + [
-            f"{self.name} -> " f"{self.shape}, privacy:{privacy}"
+        return sum([c.code_with_privacy for c in self.children], []) + [
+            f"{self.name} -> {self.shape}, privacy:{privacy}"
         ]
