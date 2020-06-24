@@ -6,3 +6,4 @@ __pycache__
 .vim
 Session.vim
 **/*.egg-info
+poetry.lock
