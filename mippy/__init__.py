@@ -26,4 +26,4 @@ __all__.extend(expressions.__all__)
 # __all__.extend(machinelearning.__all__)
 
 demo_servers = [f"local-server.{name}" for name in ["serverA", "serverB", "serverC"]]
-__all__.append(demo_servers)
+__all__.append("demo_servers")
