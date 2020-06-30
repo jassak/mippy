@@ -1,12 +1,16 @@
+#!/usr/bin/env python
+
 import numpy as np
 from addict import Dict
 
-from mippy.worker import Worker
-from mippy.master import Master
 from mippy.parameters import get_parameters
 from mippy.expressions import new_design_matrix
+from mippy.workerproxy import WorkerPool
+from mippy.pretty import pretty
 
-__all__ = ["LinearRegressionMaster", "LinearRegressionWorker"]
+from mippy import demo_servers
+
+__all__ = ["linear_regression"]
 
 properties = Dict(
     {
@@ -16,7 +20,7 @@ properties = Dict(
                 "target": {
                     "names": ["lefthippocampus"],
                     "required": True,
-                    "types": ["categorical"],
+                    "types": ["numerical"],
                 },
                 "features": {
                     "names": [
@@ -35,30 +39,20 @@ properties = Dict(
 )
 
 
-class LinearRegressionMaster(Master):
-    def run(self):
-        X = new_design_matrix(
-            "1 leftententorhinalarea leftptplanumtemporale leftprgprecentralgyrus"
-        )
-        y = new_design_matrix("lefthippocampus")
-        G = self.workers.eval(X.T @ X).sum()
-        M = self.workers.eval(X.T @ y).sum()
-        covariance = np.linalg.inv(G)
-        coeff = covariance @ M
-        print("Done!\n")
-        print(f"model coefficients = \n{coeff}")
-
-
-class LinearRegressionWorker(Worker):
-    pass
+@pretty
+def linear_regression(workers):
+    X = new_design_matrix(
+        "1 leftententorhinalarea leftptplanumtemporale leftprgprecentralgyrus"
+    )
+    y = new_design_matrix("lefthippocampus")
+    G = workers.eval(X.T @ X).sum()
+    M = workers.eval(X.T @ y).sum()
+    covariance = np.linalg.inv(G)
+    coeff = covariance @ M
+    return coeff
 
 
 if __name__ == "__main__":
     parameters = get_parameters(properties)
-
-    import time
-
-    s = time.perf_counter()
-    LinearRegressionMaster(parameters).run()
-    elapsed = time.perf_counter() - s
-    print(f"\nExecuted in {elapsed:0.3f} seconds.")
+    workers = WorkerPool(demo_servers, parameters)
+    linear_regression(workers)

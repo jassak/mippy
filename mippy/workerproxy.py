@@ -1,6 +1,7 @@
 import operator
 import functools
 from typing import List, Set, Optional
+import uuid
 
 import numpy as np
 import Pyro5.api
@@ -37,10 +38,10 @@ class WorkerProxy:
 
 
 class WorkerPool:
-    def __init__(self, server_names: List[str], params: Dict, master: str):
+    def __init__(self, server_names: List[str], params: Dict):
+        self.uid = uuid.uuid4().hex
         input_datasets = set(params.datasets)
         self._datasets = None
-        self.worker_kind = master.replace("Master", "Worker")
         self._workers = [
             worker
             for name in server_names
