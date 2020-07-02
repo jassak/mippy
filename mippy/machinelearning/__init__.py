@@ -20,7 +20,7 @@ __all__ = []
 # __all__.extend(logistic_regression.__all__)
 __all__.extend(pca.__all__)
 __all__.extend(naive_bayes.__all__)
-__all__.extend(linear_regression.__all__)
+# __all__.extend(linear_regression.__all__)
 __all__.extend(kmeans.__all__)
 __all__.extend(pearson.__all__)
 

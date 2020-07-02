@@ -44,7 +44,7 @@ class DataBase(object):
             filter_clause = self.build_filter_clause(filter_)
             sel_stmt = sel_stmt.where(filter_clause)
         data = pd.read_sql(sel_stmt, self.engine)
-        data.replace("", np.nan, inplace=True)  # fixme remove
+        data.replace("", np.nan, inplace=True)  # sometimes missing values are ''
         data = data.dropna()
         return data
 
