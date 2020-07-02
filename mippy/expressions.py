@@ -59,13 +59,14 @@ class Scalar(Mock):
 
 
 class Matrix(Mock):
-    def __init__(self, shape, name=None, tree=None):
+    def __init__(self, shape, name=None, tree=None, mock_id=None):
         super().__init__()
         self.shape = shape
         self.expr = name
         self.name = name
+        self.id = mock_id
         if name:
-            self.tree = Terminal(name, shape)
+            self.tree = Terminal(name, shape, mock_id)
         else:
             self.tree = tree
 
@@ -163,10 +164,10 @@ def unsupported_operand(op_1, op_2):
 class NumpyArray(Matrix):
     def __init__(self, iterable):
         array = np.array(iterable)
-        name = new_array_name()
-        super().__init__(array.shape, name)
+        aid = new_array_id()
+        super().__init__(array.shape, f"a[{aid}]")
         self.array = array
-        array_registry[name] = array.tolist()
+        array_registry[aid] = array.tolist()
 
 
 def new_numpy_array(iterable):
@@ -184,12 +185,12 @@ class NumberObs:
             return False
 
 
-def new_mock_name():
-    return "m_" + str(len(mock_registry))
+def new_mock_id():
+    return len(mock_registry)
 
 
-def new_array_name():
-    return "a_" + str(len(array_registry))
+def new_array_id():
+    return len(mock_registry)
 
 
 def inv(mat):
@@ -257,9 +258,9 @@ class DesignMatrix(Matrix):
             shape = (NumberObs(),)
         else:
             shape = NumberObs(), n_feat
-        name = new_mock_name()
-        super().__init__(shape, name)
-        mock_registry[name] = {
+        mid = new_mock_id()
+        super().__init__(shape, name=f"m[{mid}]", mock_id=mid)
+        mock_registry[mid] = {
             "varnames": self.varnames,
             "target_outcome": target_outcome,
         }
@@ -299,10 +300,11 @@ def is_privacy_compliant(shape):
 
 
 class Terminal(Node):
-    def __init__(self, name, shape):
+    def __init__(self, name, shape, terminal_id=None):
         super().__init__()
         self.name = name
         self.shape = shape
+        self.id = terminal_id
 
     @property
     def instructions(self):
@@ -312,7 +314,7 @@ class Terminal(Node):
     def instructions_annotated(self):
         privacy = is_privacy_compliant(self.shape)
         instr = ComplexInstruction(
-            instruction=("LOAD", f"{self.name}"), shape=f"{self.shape}", privacy=privacy
+            instruction=("LOAD", self.id), shape=f"{self.shape}", privacy=privacy
         )
         return [instr]
 

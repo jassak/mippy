@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from mippy.expressions import GOOD, BAD
+
 
 class Stack:
     def __init__(self):
@@ -38,7 +40,8 @@ class Stack:
 
 
 class StackMachine(Stack):
-    def __init__(self):
+    def __init__(self, memory):
+        self.mem = memory
         super().__init__()
         self.decode = {
             "NEG": self.neg,
@@ -49,7 +52,7 @@ class StackMachine(Stack):
             "MATMUL": self.matmul,
             "TRANSPOSE": self.transpose,
             "INV": self.inv,
-            "LOAD": self.push,
+            "LOAD": self.load,
         }
 
     def neg(self):
@@ -81,30 +84,59 @@ class StackMachine(Stack):
     def inv(self):
         self.top = np.linalg.inv(self.top)
 
+    def load(self, addr):
+        self.push(self.mem[addr])
+
     def execute(self, instructions):
         for op, *args in instructions:
             self.decode[op](*args)
-            print(op, self)
-        print(self.top)
+            # print(op, self)
+        return self.top
+
+
+def remote_eval(workers, expr):
+    instructions = list(expr.instructions_annotated)
+    instructions.reverse()
+    master_mem = {}
+    master_code = []
+
+    while instructions:
+        worker_code = []
+        while instructions[-1].privacy == BAD:
+            worker_code.append(instructions.pop().instruction)
+        worker_code.append(instructions.pop().instruction)
+        res = workers.eval_instructions(worker_code, expr.mocks).sum()
+
+        mem_size = len(master_mem)
+        master_mem[mem_size] = res
+        master_code.append(("LOAD", mem_size))
+        while instructions and instructions[-1].privacy == GOOD:
+            master_code.append(instructions.pop().instruction)
+
+    machine = StackMachine(master_mem)
+    res = machine.execute(master_code)
+    return res
 
 
 def main():
     X = np.array([[1, 2, 3], [1, 4, 2], [2, 5, 7], [2, 4, 6], [7, 4, 2]])
     y = np.array([2, 4, 91, 3, 7])
+    memory = {0: X, 1: y}
     instructions = [
-        ("LOAD", X),
+        ("LOAD", 0),
         ("TRANSPOSE",),
-        ("LOAD", X),
+        ("LOAD", 0),
         ("MATMUL",),
         ("INV",),
-        ("LOAD", X),
+        ("LOAD", 0),
         ("TRANSPOSE",),
-        ("LOAD", y),
+        ("LOAD", 1),
         ("MATMUL",),
         ("MATMUL",),
     ]
-    m = StackMachine()
-    m.execute(instructions)
+    m = StackMachine(memory=memory)
+    res = m.execute(instructions)
+    print(res)
 
 
 if __name__ == "__main__":

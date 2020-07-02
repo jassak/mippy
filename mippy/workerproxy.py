@@ -28,6 +28,11 @@ class WorkerProxy:
             self.params, "eval", str(expr), expr.mocks, expr.arrays
         )
 
+    def eval_instructions(self, instructions, mocks):
+        return self._proxy.run_on_worker(
+            self.params, "eval_instructions", instructions, mocks
+        )
+
     @property
     def datasets(self) -> Set[str]:
         if self._datasets:
@@ -67,6 +72,11 @@ class WorkerPool:
 
     def eval(self, expr):
         result = [node.eval(expr) for node in self]
+        result = [np.array(r) if isinstance(r, list) else r for r in result]
+        return WorkersResult(result)
+
+    def eval_instructions(self, instructions, mocks):
+        result = [node.eval_instructions(instructions, mocks) for node in self]
         result = [np.array(r) if isinstance(r, list) else r for r in result]
         return WorkersResult(result)
 
