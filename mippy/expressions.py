@@ -247,21 +247,27 @@ def diag(mat):
 
 class DesignMatrix(Matrix):
     def __init__(self, varnames, target_outcome):
-        n_feat = len(varnames.split(" "))
+        if isinstance(varnames, List):
+            self.varnames = varnames
+            n_feat = len(self.varnames)
+        elif isinstance(varnames, str):
+            self.varnames = varnames.split(" ")
+            n_feat = len(self.varnames)
         if n_feat == 1:
             shape = (NumberObs(),)
         else:
             shape = NumberObs(), n_feat
         name = new_mock_name()
         super().__init__(shape, name)
-        self.varnames = varnames.split(" ")
         mock_registry[name] = {
             "varnames": self.varnames,
             "target_outcome": target_outcome,
         }
 
 
-def new_design_matrix(varnames, target_outcome=None):
+def new_design_matrix(varnames, target_outcome=None, intercept=False):
+    if intercept:
+        varnames = ["1"] + varnames
     return DesignMatrix(varnames, target_outcome)
 
 
