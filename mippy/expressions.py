@@ -1,6 +1,8 @@
 import json
 from abc import ABC, abstractmethod
 from numbers import Number
+from typing import List
+from collections import namedtuple
 
 import numpy as np
 
@@ -15,8 +17,10 @@ __all__ = [
     "inv",
 ]
 
-GOOD = "👍"
-BAD = "👎"
+GOOD = "✅"
+BAD = "❌"
+
+ComplexInstruction = namedtuple("ComplexInstruction", "instruction shape privacy")
 
 mock_registry = dict()
 array_registry = dict()
@@ -37,12 +41,12 @@ class Mock:
         return self.expr
 
     @property
-    def code(self):
-        return self.tree.code
+    def instructions(self):
+        return self.tree.instructions
 
     @property
-    def code_with_privacy(self):
-        return self.tree.code_with_privacy
+    def instructions_annotated(self):
+        return self.tree.instructions_annotated
 
 
 class Scalar(Mock):
@@ -193,7 +197,7 @@ def inv(mat):
     expr = mat.expr
     tree = mat.tree
     mat = Matrix(shape=shape)
-    mat.expr = f"inv({expr})"
+    mat.expr = f"np.linalg.inv({expr})"
     mat.tree = UnaryOp("INV", tree, mat.shape)
     return mat
 
@@ -280,7 +284,7 @@ class Node(ABC):
 
     @property
     @abstractmethod
-    def code(self):
+    def instructions(self):
         pass
 
 
@@ -295,13 +299,16 @@ class Terminal(Node):
         self.shape = shape
 
     @property
-    def code(self):
+    def instructions(self):
         return [f"LOAD {self.name}"]
 
     @property
-    def code_with_privacy(self):
+    def instructions_annotated(self):
         privacy = is_privacy_compliant(self.shape)
-        return [f"LOAD {self.name} -> {self.shape}, privacy:{privacy}"]
+        instr = ComplexInstruction(
+            instruction=("LOAD", f"{self.name}"), shape=f"{self.shape}", privacy=privacy
+        )
+        return [instr]
 
 
 class UnaryOp(Node):
@@ -312,15 +319,16 @@ class UnaryOp(Node):
         self.shape = shape
 
     @property
-    def code(self):
-        return self.children.code + [f"{self.name}"]
+    def instructions(self):
+        return self.children.instructions + [f"{self.name}"]
 
     @property
-    def code_with_privacy(self):
+    def instructions_annotated(self):
         privacy = is_privacy_compliant(self.shape)
-        return self.children.code_with_privacy + [
-            f"{self.name} -> {self.shape}, privacy:{privacy}"
-        ]
+        instr = ComplexInstruction(
+            instruction=(f"{self.name}",), shape=f"{self.shape}", privacy=privacy
+        )
+        return self.children.instructions_annotated + [instr]
 
 
 class BinaryOp(Node):
@@ -331,12 +339,13 @@ class BinaryOp(Node):
         self.shape = shape
 
     @property
-    def code(self):
-        return sum([c.code for c in self.children], []) + [f"{self.name}"]
+    def instructions(self):
+        return sum([c.instructions for c in self.children], []) + [f"{self.name}"]
 
     @property
-    def code_with_privacy(self):
+    def instructions_annotated(self):
         privacy = is_privacy_compliant(self.shape)
-        return sum([c.code_with_privacy for c in self.children], []) + [
-            f"{self.name} -> {self.shape}, privacy:{privacy}"
-        ]
+        instr = ComplexInstruction(
+            instruction=(f"{self.name}",), shape=f"{self.shape}", privacy=privacy
+        )
+        return sum([c.instructions_annotated for c in self.children], []) + [instr]
