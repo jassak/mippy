@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+
+import time
 import subprocess
 from pathlib import Path
 
@@ -6,6 +8,7 @@ from pathlib import Path
 mippy_path = Path.cwd().parent / "mippy"
 
 server_names = ["serverA", "serverB", "serverC"]
+# server_names = ["serverA", "serverB"]
 
 print("Starting name server")
 ns_proc = subprocess.Popen("pyro5-ns")
@@ -18,8 +21,9 @@ try:
             ["python", "server.py", "--servername={name}".format(name=name)],
             cwd=mippy_path.as_posix(),
         )
-    while True:
-        pass
+    time.sleep(1200)
+    # while True:
+    #     pass
 except KeyboardInterrupt:
     pass
 finally:
